@@ -1,9 +1,11 @@
 import { z } from 'zod';
+import { isValidPhone } from '../../common/utils/phone';
 
 const email = z.string().trim().toLowerCase().email().max(254);
+const phone = z.string().trim().refine(isValidPhone, 'Số điện thoại không hợp lệ.');
 const otp = z.string().trim().length(6);
 
-export const registerOtpBody = z.object({ email });
+export const registerOtpBody = z.object({ phone });
 
 export const registerBody = z.object({
   fullName: z.string().trim().min(2).max(100),
@@ -24,7 +26,7 @@ export const loginBody = z.object({
 export const refreshBody = z.object({ refreshToken: z.string().min(10) });
 export const logoutBody = z.object({ refreshToken: z.string().optional() });
 
-export const forgotBody = z.object({ email });
+export const forgotBody = z.object({ phone });
 export const verifyPinBody = z.object({ requestId: z.string().uuid(), pin: otp });
 export const resetBody = z.object({
   requestId: z.string().uuid(),

@@ -10,13 +10,13 @@ Ký hiệu vai trò: **M** = học viên (MEMBER), **S** = staff (COACH, HEAD_CO
 ## Auth (`/auth`)
 | Method | Path | Quyền | Ghi chú |
 |---|---|---|---|
-| POST | `/auth/register/otp` | công khai | Gửi mã OTP 6 số tới email đăng ký → `{ requestId, maskedDestination, devPin? }`; email đã có → 409 `EMAIL_TAKEN` |
-| POST | `/auth/register` | công khai | Bắt buộc `email` + `otpRequestId` + `otp` (sai/hết hạn → 400 `OTP_INVALID`). Tạo học viên, đánh dấu email đã xác thực, khởi tạo hạng I; chặn trùng SĐT/email (`PHONE_TAKEN`, `EMAIL_TAKEN`) |
+| POST | `/auth/register/otp` | công khai | Gửi mã OTP 6 số qua Zalo (tự chuyển SMS nếu Zalo thất bại) tới `phone` đăng ký → `{ requestId, maskedDestination, devPin? }`; SĐT không hợp lệ → 400, SĐT đã có → 409 `PHONE_TAKEN` |
+| POST | `/auth/register` | công khai | Bắt buộc `phone` (trùng SĐT đã nhận OTP) + `email` + `otpRequestId` + `otp` (sai/hết hạn/khác SĐT → 400 `OTP_INVALID`). Tạo học viên, đánh dấu SĐT đã xác thực, khởi tạo hạng I; chặn trùng SĐT/email (`PHONE_TAKEN`, `EMAIL_TAKEN`) |
 | POST | `/auth/login` | công khai | `identifier` = email hoặc SĐT. INACTIVE → 403 `ACCOUNT_INACTIVE`; FROZEN vẫn đăng nhập được |
 | POST | `/auth/refresh` | công khai | Refresh token xoay vòng, dùng một lần |
 | POST | `/auth/logout` | đăng nhập | Thu hồi refresh token |
 | GET | `/auth/me` | đăng nhập | Thông tin user + `roles` + `appRole` (`student|coach|reception|admin`) |
-| POST | `/auth/password/forgot` → `/verify-pin` → `/reset` | công khai | Quên mật khẩu: nhập `email` → PIN gửi qua email (`EMAIL_NOT_REGISTERED` nếu chưa có); sai quá `security.pin_max_attempts` lần thì mã bị khoá (dev: trả `devPin`) |
+| POST | `/auth/password/forgot` → `/verify-pin` → `/reset` | công khai | Quên mật khẩu: nhập `phone` → PIN gửi qua Zalo, dự phòng SMS (`PHONE_NOT_REGISTERED` nếu chưa có); sai quá `security.pin_max_attempts` lần thì mã bị khoá (dev: trả `devPin`) |
 | POST | `/auth/devices` | đăng nhập | Đăng ký device token push |
 
 ## Thành viên (`members`)

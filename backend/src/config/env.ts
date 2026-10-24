@@ -30,16 +30,24 @@ const schema = z.object({
     .transform((v) => v === 'true'),
 
   PUSH_PROVIDER: z.enum(['console', 'fcm']).default('console'),
-  OTP_PROVIDER: z.enum(['console', 'resend']).default('console'),
-  RESEND_API_KEY: z.string().min(1).optional(),
-  /** Sender, e.g. `HVP <no-reply@hvp.vn>` (the domain must be verified in Resend). */
-  MAIL_FROM: z.string().min(3).optional(),
-  /** Optional address that receives a blind copy of every OTP mail. */
-  MAIL_BCC: z.string().trim().email().optional().or(z.literal('').transform(() => undefined)),
+  OTP_PROVIDER: z.enum(['console', 'esms']).default('console'),
+  ESMS_API_KEY: z.string().optional(),
+  ESMS_SECRET_KEY: z.string().optional(),
+  /** Sender name registered with eSMS (and the carriers), e.g. `HVP`. */
+  ESMS_BRANDNAME: z.string().optional(),
+  /** Zalo Official Account linked in eSMS; OTP goes by Zalo ZNS first, SMS as fallback. */
+  ESMS_ZALO_OA_ID: z.string().optional(),
+  /** Approved ZNS OTP template (single `otp` param). */
+  ESMS_ZALO_TEMPLATE_ID: z.string().optional(),
+  /** `true`: eSMS validates the request but sends and charges nothing. */
+  ESMS_SANDBOX: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
 }).superRefine((v, ctx) => {
-  if (v.OTP_PROVIDER !== 'resend') return;
-  for (const key of ['RESEND_API_KEY', 'MAIL_FROM'] as const) {
-    if (!v[key]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: 'required when OTP_PROVIDER=resend' });
+  if (v.OTP_PROVIDER !== 'esms') return;
+  for (const key of ['ESMS_API_KEY', 'ESMS_SECRET_KEY', 'ESMS_BRANDNAME', 'ESMS_ZALO_OA_ID', 'ESMS_ZALO_TEMPLATE_ID'] as const) {
+    if (!v[key]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: 'required when OTP_PROVIDER=esms' });
   }
 });
 

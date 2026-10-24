@@ -32,9 +32,9 @@ export interface ResetRequestRow {
   usedAt: Date | null;
 }
 
-export interface EmailOtpRow {
+export interface PhoneOtpRow {
   id: string;
-  email: string;
+  phone: string;
   pinHash: string;
   attemptCount: number;
   expiresAt: Date;
@@ -71,8 +71,8 @@ export class AuthRepository {
     return sql.exec(`UPDATE users SET last_login_at = now() WHERE id = $1`, [userId]);
   }
 
-  markEmailVerified(userId: string): Promise<number> {
-    return sql.exec(`UPDATE users SET email_verified_at = now() WHERE id = $1`, [userId]);
+  markPhoneVerified(userId: string): Promise<number> {
+    return sql.exec(`UPDATE users SET phone_verified_at = now() WHERE id = $1`, [userId]);
   }
 
   setPassword(userId: string, passwordHash: string): Promise<number> {
@@ -133,24 +133,24 @@ export class AuthRepository {
 
   // ---------- registration e-mail OTP ----------
 
-  insertEmailOtp(input: { email: string; pinHash: string; expiresAt: Date }) {
+  insertPhoneOtp(input: { phone: string; pinHash: string; expiresAt: Date }) {
     return sql.one<{ id: string }>(
-      `INSERT INTO email_verifications (tenant_id, email, pin_hash, expires_at) VALUES ($1,$2,$3,$4) RETURNING id`,
-      [db.currentTenantId(), input.email, input.pinHash, input.expiresAt],
+      `INSERT INTO phone_verifications (tenant_id, phone, pin_hash, expires_at) VALUES ($1,$2,$3,$4) RETURNING id`,
+      [db.currentTenantId(), input.phone, input.pinHash, input.expiresAt],
     );
   }
 
   /** Counts one attempt atomically; null when the OTP is used or out of attempts. */
-  claimEmailOtpAttempt(id: string, maxAttempts: number): Promise<EmailOtpRow | null> {
-    return sql.one<EmailOtpRow>(
-      `UPDATE email_verifications SET attempt_count = attempt_count + 1
+  claimPhoneOtpAttempt(id: string, maxAttempts: number): Promise<PhoneOtpRow | null> {
+    return sql.one<PhoneOtpRow>(
+      `UPDATE phone_verifications SET attempt_count = attempt_count + 1
        WHERE id = $1 AND attempt_count < $2 AND used_at IS NULL RETURNING *`,
       [id, maxAttempts],
     );
   }
 
-  markEmailOtpUsed(id: string): Promise<number> {
-    return sql.exec(`UPDATE email_verifications SET used_at = now() WHERE id = $1`, [id]);
+  markPhoneOtpUsed(id: string): Promise<number> {
+    return sql.exec(`UPDATE phone_verifications SET used_at = now() WHERE id = $1`, [id]);
   }
 
   // ---------- logs & devices ----------

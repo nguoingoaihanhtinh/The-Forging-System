@@ -33,9 +33,9 @@ void main() {
     await tester.tap(first);
     await tester.pumpAndSettle();
 
-    expect(repo.otpEmails, <String>['an@gmail.com']);
+    expect(repo.otpPhones, <String>['0912345678']);
     expect(repo.registered, isEmpty);
-    expect(find.text('Mã xác thực đã gửi tới ng***@gmail.com'), findsOneWidget);
+    expect(find.text('Mã xác thực đã gửi tới 091****678'), findsOneWidget);
 
     await tester.enterText(find.byType(TextFormField).at(5), '123456');
     final confirm = find.widgetWithText(HvpButton, 'XÁC NHẬN & ĐĂNG KÝ');

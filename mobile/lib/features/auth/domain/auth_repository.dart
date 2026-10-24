@@ -37,7 +37,7 @@ abstract class AuthRepository {
 
   Future<AuthUser> register(RegisterInput input);
 
-  Future<OtpTicket> requestRegisterOtp(String email);
+  Future<OtpTicket> requestRegisterOtp(String phone);
 
   /// Restores the stored session on cold start. Returns null when there is no
   /// valid session. Throws `ApiException` for network failures (session kept).
@@ -46,7 +46,7 @@ abstract class AuthRepository {
   /// Revokes the refresh token (best effort) and clears local credentials.
   Future<void> logout();
 
-  Future<OtpTicket> requestPasswordReset(String email);
+  Future<OtpTicket> requestPasswordReset(String phone);
 
   /// Returns the short-lived reset token.
   Future<String> verifyResetPin({required String requestId, required String pin});

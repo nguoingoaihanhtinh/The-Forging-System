@@ -47,9 +47,12 @@ services:
       ENABLE_SCHEDULER: "true"
       PUSH_PROVIDER: ${PUSH_PROVIDER:-console}
       OTP_PROVIDER: ${OTP_PROVIDER:-console}
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      MAIL_FROM: ${MAIL_FROM:-}
-      MAIL_BCC: ${MAIL_BCC:-}
+      ESMS_API_KEY: ${ESMS_API_KEY:-}
+      ESMS_SECRET_KEY: ${ESMS_SECRET_KEY:-}
+      ESMS_BRANDNAME: ${ESMS_BRANDNAME:-}
+      ESMS_ZALO_OA_ID: ${ESMS_ZALO_OA_ID:-}
+      ESMS_ZALO_TEMPLATE_ID: ${ESMS_ZALO_TEMPLATE_ID:-}
+      ESMS_SANDBOX: ${ESMS_SANDBOX:-false}
       # Set to "true" once to load demo accounts, classes, rewards and challenges.
       SEED_DEMO: ${SEED_DEMO:-false}
     ports:

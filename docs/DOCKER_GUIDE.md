@@ -33,7 +33,7 @@ Tài khoản demo (khi `SEED_DEMO=true`): admin `0900000001`, head coach `090000
 | `JWT_ACCESS_SECRET` | giá trị dev | Bắt buộc đổi, ≥ 32 ký tự |
 | `API_PORT`, `POSTGRES_PORT`, `ADMINER_PORT` | 4000, 5432, 8080 | Đổi nếu trùng cổng |
 | `PUBLIC_BASE_URL` | `http://localhost:4000` | URL công khai để app mở ảnh upload |
-| `PUSH_PROVIDER`, `OTP_PROVIDER` | `console` | `fcm` cần cấu hình thêm; OTP email thật: `OTP_PROVIDER=resend` + `RESEND_API_KEY` + `MAIL_FROM` |
+| `PUSH_PROVIDER`, `OTP_PROVIDER` | `console` | `fcm` cần cấu hình thêm; OTP thật (Zalo, dự phòng SMS): `OTP_PROVIDER=esms` + `ESMS_API_KEY` + `ESMS_SECRET_KEY` + `ESMS_BRANDNAME` + `ESMS_ZALO_OA_ID` + `ESMS_ZALO_TEMPLATE_ID` (`ESMS_SANDBOX=true` để thử không mất phí) |
 
 ## Kết nối từ app
 - Chạy app trên Chrome / iOS simulator: `API_BASE_URL=http://localhost:4000/api/v1`.

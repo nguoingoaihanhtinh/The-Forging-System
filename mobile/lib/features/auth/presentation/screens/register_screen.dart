@@ -34,16 +34,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirm = TextEditingController();
   final _otp = TextEditingController();
 
-  /// Set after the OTP was sent (phase 2); cleared when the email text changes.
+  /// Set after the OTP was sent (phase 2); cleared when the phone text changes.
   OtpTicket? _ticket;
-  String _ticketEmail = '';
+  String _ticketPhone = '';
 
   @override
   void initState() {
     super.initState();
     // The controller also notifies on cursor moves, so compare the text itself.
-    _email.addListener(() {
-      if (_ticket != null && _email.text != _ticketEmail) setState(() => _ticket = null);
+    _phone.addListener(() {
+      if (_ticket != null && _phone.text != _ticketPhone) setState(() => _ticket = null);
     });
     Future<void>.microtask(() => ref.read(registerSubmitProvider.notifier).reset());
   }
@@ -61,14 +61,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _requestOtp() async {
     OtpTicket? ticket;
-    final email = _email.text;
+    final phone = _phone.text;
     final ok = await ref.read(registerSubmitProvider.notifier).run(() async {
-      ticket = await ref.read(authRepositoryProvider).requestRegisterOtp(email);
+      ticket = await ref.read(authRepositoryProvider).requestRegisterOtp(phone);
     });
     if (!mounted || !ok) return;
     setState(() {
       _ticket = ticket;
-      _ticketEmail = email;
+      _ticketPhone = phone;
       _otp.clear();
     });
   }

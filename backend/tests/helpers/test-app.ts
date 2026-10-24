@@ -103,8 +103,8 @@ let emailSeq = 0;
 export const nextEmail = () => `hv${Date.now()}${++emailSeq}@example.com`;
 
 /** Requests a registration OTP and returns the ticket (`devPin` with the console provider). */
-export async function registerOtp(api: TestContext['api'], email: string) {
-  const res = await api.post('/api/v1/auth/register/otp').send({ email });
+export async function registerOtp(api: TestContext['api'], phone: string) {
+  const res = await api.post('/api/v1/auth/register/otp').send({ phone });
   if (res.status !== 200) throw new Error(`register otp failed (${res.status}): ${JSON.stringify(res.body)}`);
   return res.body.data as { requestId: string; maskedDestination: string; devPin: string };
 }
@@ -113,7 +113,7 @@ export async function registerOtp(api: TestContext['api'], email: string) {
 export async function registerMember(api: TestContext['api'], overrides: Partial<{ fullName: string; phone: string; email: string }> = {}) {
   const phone = overrides.phone ?? nextPhone();
   const email = overrides.email ?? nextEmail();
-  const otp = await registerOtp(api, email);
+  const otp = await registerOtp(api, phone);
   const res = await api.post('/api/v1/auth/register').send({
     fullName: overrides.fullName ?? 'Học Viên Test',
     phone,

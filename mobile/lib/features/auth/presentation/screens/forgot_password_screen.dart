@@ -7,7 +7,7 @@ import '../providers/auth_form_providers.dart';
 import '../widgets/auth_scaffold.dart';
 import '../widgets/forgot_steps.dart';
 
-/// Password reset by email PIN: forgot -> verify-pin -> reset.
+/// Password reset by SMS PIN: forgot -> verify-pin -> reset.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -32,7 +32,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
     final step = ref.watch(forgotPasswordProvider.select((s) => s.step));
     final (String title, String subtitle, Widget body) = switch (step) {
-      ForgotStep.email => ('Quên mật khẩu', 'Nhập email đã đăng ký để nhận mã PIN xác thực.', const ForgotEmailStep()),
+      ForgotStep.phone => ('Quên mật khẩu', 'Nhập số điện thoại đã đăng ký để nhận mã PIN qua SMS.', const ForgotPhoneStep()),
       ForgotStep.pin => ('Nhập mã PIN', 'Mã có hiệu lực trong ít phút.', const ForgotPinStep()),
       ForgotStep.reset || ForgotStep.done => (
           'Mật khẩu mới',

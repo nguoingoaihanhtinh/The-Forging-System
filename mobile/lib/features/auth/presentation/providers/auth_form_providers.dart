@@ -7,12 +7,12 @@ import 'auth_providers.dart';
 final loginSubmitProvider = NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
 final registerSubmitProvider = NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
 
-enum ForgotStep { email, pin, reset, done }
+enum ForgotStep { phone, pin, reset, done }
 
 class ForgotState {
   const ForgotState({
-    this.step = ForgotStep.email,
-    this.email = '',
+    this.step = ForgotStep.phone,
+    this.phone = '',
     this.requestId,
     this.maskedDestination,
     this.devPin,
@@ -22,7 +22,7 @@ class ForgotState {
   });
 
   final ForgotStep step;
-  final String email;
+  final String phone;
   final String? requestId;
   final String? maskedDestination;
 
@@ -34,7 +34,7 @@ class ForgotState {
 
   ForgotState copyWith({
     ForgotStep? step,
-    String? email,
+    String? phone,
     String? requestId,
     String? maskedDestination,
     String? devPin,
@@ -45,7 +45,7 @@ class ForgotState {
   }) =>
       ForgotState(
         step: step ?? this.step,
-        email: email ?? this.email,
+        phone: phone ?? this.phone,
         requestId: requestId ?? this.requestId,
         maskedDestination: maskedDestination ?? this.maskedDestination,
         devPin: devPin ?? this.devPin,
@@ -55,20 +55,20 @@ class ForgotState {
       );
 }
 
-/// Three-step password reset: email -> PIN -> new password.
+/// Three-step password reset: phone -> SMS PIN -> new password.
 class ForgotPasswordController extends Notifier<ForgotState> {
   @override
   ForgotState build() => const ForgotState();
 
   void reset() => state = const ForgotState();
 
-  Future<void> requestPin(String email) async {
+  Future<void> requestPin(String phone) async {
     state = state.copyWith(submitting: true, clearError: true);
     try {
-      final ticket = await ref.read(authRepositoryProvider).requestPasswordReset(email);
+      final ticket = await ref.read(authRepositoryProvider).requestPasswordReset(phone);
       state = ForgotState(
         step: ForgotStep.pin,
-        email: email,
+        phone: phone,
         requestId: ticket.requestId,
         maskedDestination: ticket.maskedDestination,
         devPin: ticket.devPin,

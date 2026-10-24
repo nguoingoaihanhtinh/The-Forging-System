@@ -86,14 +86,13 @@ void main() {
     expect(body['otp'], '123456');
   });
 
-  test('requestRegisterOtp posts the email and parses the ticket', () async {
-    final t =
-        _build((o) => okEnvelope(<String, dynamic>{'requestId': 'otp-1', 'maskedDestination': 'an***@gmail.com'}));
+  test('requestRegisterOtp posts the phone and parses the ticket', () async {
+    final t = _build((o) => okEnvelope(<String, dynamic>{'requestId': 'otp-1', 'maskedDestination': '091****678'}));
 
-    final ticket = await t.repo.requestRegisterOtp(' an@gmail.com ');
+    final ticket = await t.repo.requestRegisterOtp(' 0912345678 ');
 
     expect(t.adapter.requests.single.path, '/auth/register/otp');
-    expect((t.adapter.requests.single.data as Map)['email'], 'an@gmail.com');
+    expect((t.adapter.requests.single.data as Map)['phone'], '0912345678');
     expect(ticket.requestId, 'otp-1');
     expect(ticket.devPin, isNull);
   });
@@ -135,8 +134,8 @@ void main() {
       }
     });
 
-    final ticket = await t.repo.requestPasswordReset('an@gmail.com');
-    expect((t.adapter.requests.first.data as Map)['email'], 'an@gmail.com');
+    final ticket = await t.repo.requestPasswordReset('0912345678');
+    expect((t.adapter.requests.first.data as Map)['phone'], '0912345678');
     expect(ticket.requestId, 'req-1');
     expect(ticket.devPin, '123456');
     final token = await t.repo.verifyResetPin(requestId: ticket.requestId, pin: '123456');

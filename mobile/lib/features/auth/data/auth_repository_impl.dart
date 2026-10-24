@@ -80,13 +80,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<OtpTicket> requestRegisterOtp(String email) => _requestOtp('/auth/register/otp', email);
+  Future<OtpTicket> requestRegisterOtp(String phone) => _requestOtp('/auth/register/otp', phone);
 
   @override
-  Future<OtpTicket> requestPasswordReset(String email) => _requestOtp('/auth/password/forgot', email);
+  Future<OtpTicket> requestPasswordReset(String phone) => _requestOtp('/auth/password/forgot', phone);
 
-  Future<OtpTicket> _requestOtp(String path, String email) async {
-    final res = await _api.post(path, auth: false, body: <String, dynamic>{'email': email.trim()});
+  Future<OtpTicket> _requestOtp(String path, String phone) async {
+    final res = await _api.post(path, auth: false, body: <String, dynamic>{'phone': phone.trim()});
     final d = res.dataMap;
     return OtpTicket(
       requestId: str(d, 'requestId'),
