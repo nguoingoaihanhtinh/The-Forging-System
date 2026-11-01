@@ -28,6 +28,7 @@ Tài liệu theo từng tính năng để FE dựng màn hình mà không cần 
 
 - [`batch.md`](batch.md): batch job / scheduler (danh sách, chạy tay, lịch sử)
 - [`branches.md`](branches.md): chi nhánh (danh sách, chi tiết, quản trị, QR check-in)
+- [`checkin.md`](checkin.md): check-in (mã xoay vòng, buổi hôm nay, học viên tự check-in, lễ tân check-in hộ, bộ mã lỗi)
 - `classes.md`: lớp học
 - `memberships.md`: gói tập
 - [`schedule.md`](schedule.md): lịch học viên tuần/tháng, chi tiết buổi

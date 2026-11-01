@@ -1,4 +1,4 @@
-import { AppError, badRequest, forbidden } from '../../common/errors/app-error';
+import { AppError } from '../../common/errors/app-error';
 import { clock } from '../../common/utils/clock';
 import { logger } from '../../common/utils/logger';
 import { localDate } from '../../common/utils/time';
@@ -7,7 +7,7 @@ import { RoleGroup } from '../../shared/roles';
 import type { AuditService } from '../audit/audit.service';
 import type { CheckinCodePort } from './checkin-code.service';
 import type { CheckinSessionService, CheckinSessionView, TodayCheckin } from './checkin-session.service';
-import { errorForVerdict, membershipInvalidError, noSessionTodayError, sessionNotEligibleError, wrongBranchError } from './checkin.errors';
+import { checkinError, errorForVerdict, membershipInvalidError, noSessionTodayError, sessionNotEligibleError, wrongBranchError } from './checkin.errors';
 import type { AttendanceRow, CheckinRepository } from './checkin.repository';
 import { isCheckedIn } from './checkin.rules';
 
@@ -59,9 +59,9 @@ const ASSISTED_DONE = 'Đã check-in hộ học viên. Buổi tập đang chờ 
 
 /** The proof must be a file this system stored. */
 function requireEvidence(url: string | undefined): string {
-  if (!url?.trim()) throw badRequest('Vui lòng chụp ảnh minh chứng khi check-in hộ.', undefined, 'CHECKIN_EVIDENCE_REQUIRED');
+  if (!url?.trim()) throw checkinError('CHECKIN_EVIDENCE_REQUIRED');
   if (!url.startsWith(`${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/files/`)) {
-    throw badRequest('Ảnh minh chứng không hợp lệ.', undefined, 'INVALID_CHECKIN_EVIDENCE');
+    throw checkinError('INVALID_CHECKIN_EVIDENCE');
   }
   return url;
 }
@@ -119,7 +119,7 @@ export class CheckinService {
       const session = today.sessions.find((s) => s.sessionId === input.sessionId);
       if (!session) throw sessionNotEligibleError();
       if (!isAdmin(actor.roles) && session.branch.id !== actor.branchId) {
-        throw forbidden('Bạn chỉ check-in hộ cho buổi tập tại chi nhánh của mình.');
+        throw checkinError('CHECKIN_BRANCH_FORBIDDEN', { message: 'Bạn chỉ check-in hộ cho buổi tập tại chi nhánh của mình.' });
       }
       if (session.checkin.state === 'CHECKED_IN') return this.already(memberId, session, null);
       if (!session.checkin.canCheckin) throw errorForVerdict(session.checkin);

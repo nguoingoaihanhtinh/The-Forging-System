@@ -1,14 +1,12 @@
 import { randomBytes } from 'node:crypto';
-import { badRequest, forbidden, notFound, unprocessable } from '../../common/errors/app-error';
+import { notFound } from '../../common/errors/app-error';
 import { clock } from '../../common/utils/clock';
 import { RoleGroup } from '../../shared/roles';
 import type { SettingsService } from '../settings/settings.service';
 import { buildPayload, checkPayload, checkShortCode, parsePayload, shortCodeOf, windowEndsAt, windowOf } from './checkin-code';
 import type { BranchCodeKey } from './checkin-code';
+import { checkinError } from './checkin.errors';
 import type { CheckinRepository, CodeBranch } from './checkin.repository';
-
-const MSG_INVALID = 'Mã QR không hợp lệ. Vui lòng quét mã trên màn hình phòng tập.';
-const MSG_EXPIRED = 'Mã QR đã hết hạn, vui lòng quét lại mã mới trên màn hình phòng tập.';
 
 /** What the front-desk screen needs to draw the current code. */
 export interface CurrentCode {
@@ -56,9 +54,9 @@ export class CheckinCodeService implements CheckinCodePort {
     const branch = await this.repo.findBranch(branchId);
     if (!branch) throw notFound('Chi nhánh');
     if (!isAdmin(viewer.roles) && viewer.branchId !== branch.id) {
-      throw forbidden('Bạn chỉ lấy được mã check-in của chi nhánh mình.');
+      throw checkinError('CHECKIN_BRANCH_FORBIDDEN', { message: 'Bạn chỉ lấy được mã check-in của chi nhánh mình.' });
     }
-    if (!branch.isActive) throw unprocessable('Chi nhánh đang ngừng hoạt động.', 'BRANCH_INACTIVE');
+    if (!branch.isActive) throw checkinError('BRANCH_INACTIVE');
 
     const key = await this.keyOf(branch, true);
     const ttlSeconds = await this.ttl();
@@ -79,22 +77,22 @@ export class CheckinCodeService implements CheckinCodePort {
   /** Validates a scanned QR text; resolves the branch it belongs to or throws a stable error code. */
   async verifyPayload(text: string): Promise<VerifiedCode> {
     const parsed = parsePayload(text);
-    if (!parsed) throw badRequest(MSG_INVALID, undefined, 'CHECKIN_CODE_INVALID');
+    if (!parsed) throw checkinError('CHECKIN_CODE_INVALID');
     const branch = await this.repo.findBranchByCode(parsed.branchCode);
     // A branch that never issued a code has no secret: nothing it printed can be valid.
-    if (!branch || !branch.isActive || !branch.checkinSecret) throw badRequest(MSG_INVALID, undefined, 'CHECKIN_CODE_INVALID');
+    if (!branch || !branch.isActive || !branch.checkinSecret) throw checkinError('CHECKIN_CODE_INVALID');
     const result = checkPayload(await this.keyOf(branch, false), parsed, await this.ttl(), clock.now().getTime());
-    if (result === 'INVALID') throw badRequest(MSG_INVALID, undefined, 'CHECKIN_CODE_INVALID');
-    if (result === 'EXPIRED') throw unprocessable(MSG_EXPIRED, 'CHECKIN_CODE_EXPIRED');
+    if (result === 'INVALID') throw checkinError('CHECKIN_CODE_INVALID');
+    if (result === 'EXPIRED') throw checkinError('CHECKIN_CODE_EXPIRED');
     return { branchId: branch.id, branchCode: branch.code };
   }
 
   /** Validates the 6 digits typed for a given branch (manual entry). */
   async verifyShortCode(branchId: string, code: string): Promise<void> {
     const branch = await this.repo.findBranch(branchId);
-    if (!branch || !branch.isActive || !branch.checkinSecret) throw badRequest(MSG_INVALID, undefined, 'CHECKIN_CODE_INVALID');
+    if (!branch || !branch.isActive || !branch.checkinSecret) throw checkinError('CHECKIN_CODE_INVALID');
     if (!checkShortCode(await this.keyOf(branch, false), code, await this.ttl(), clock.now().getTime())) {
-      throw badRequest(MSG_INVALID, undefined, 'CHECKIN_CODE_INVALID');
+      throw checkinError('CHECKIN_CODE_INVALID');
     }
   }
 
