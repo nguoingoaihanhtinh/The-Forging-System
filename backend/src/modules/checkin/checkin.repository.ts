@@ -37,6 +37,25 @@ export interface MemberGateRow {
   hasActiveMembership: boolean;
 }
 
+export interface AttendanceRow {
+  id: string;
+  attendanceStatus: string;
+  checkinAt: Date | null;
+}
+
+export interface ChargedMembership {
+  id: string;
+  totalSessions: number | null;
+  usedSessions: number;
+}
+
+export interface CheckinWrite {
+  at: Date;
+  /** Front-desk user who checked the member in; null for self check-in. */
+  checkedInBy: string | null;
+  evidenceUrl: string | null;
+}
+
 const COLUMNS = `id, code, name, is_active, qr_version, checkin_secret`;
 
 export class CheckinRepository {
@@ -93,5 +112,60 @@ export class CheckinRepository {
         WHERE m.user_id = $1`,
       [memberId],
     );
+  }
+
+  /** The member's attendance row of a session, locked until the transaction ends (serialises double scans). */
+  lockAttendance(sessionId: string, memberId: string): Promise<AttendanceRow | null> {
+    return sql.one(
+      `SELECT id, attendance_status, checkin_at FROM attendances WHERE session_id = $1 AND member_id = $2 FOR UPDATE`,
+      [sessionId, memberId],
+    );
+  }
+
+  /** New attendance already waiting for the coach; null when another request created the row first. */
+  async insertCheckin(sessionId: string, memberId: string, w: CheckinWrite): Promise<string | null> {
+    const row = await sql.one<{ id: string }>(
+      `INSERT INTO attendances (tenant_id, session_id, member_id, checkin_at, checkin_evidence_url, checked_in_by, attendance_status)
+       VALUES (current_setting('app.current_tenant_id')::uuid, $1, $2, $3, $4, $5, 'AWAITING_COACH')
+       ON CONFLICT (session_id, member_id) DO NOTHING
+       RETURNING id`,
+      [sessionId, memberId, w.at, w.evidenceUrl, w.checkedInBy],
+    );
+    return row?.id ?? null;
+  }
+
+  /** Turns a pre-created (UPCOMING) or coach-absent row into a check-in. */
+  markCheckedIn(attendanceId: string, w: CheckinWrite): Promise<number> {
+    return sql.exec(
+      `UPDATE attendances
+          SET attendance_status = 'AWAITING_COACH', checkin_at = $2, checkin_evidence_url = $3, checked_in_by = $4, updated_at = now()
+        WHERE id = $1`,
+      [attendanceId, w.at, w.evidenceUrl, w.checkedInBy],
+    );
+  }
+
+  /**
+   * Takes one session off the member's ACTIVE package, atomically (a package without sessions or days left
+   * is not touched). Packages without a session limit just count the use. Null when there is nothing to charge.
+   */
+  charge(memberId: string, today: string): Promise<ChargedMembership | null> {
+    return sql.one(
+      `UPDATE memberships
+          SET used_sessions = used_sessions + 1, updated_at = now()
+        WHERE member_id = $1 AND status = 'ACTIVE'
+          AND (total_sessions IS NULL OR used_sessions < total_sessions)
+          AND (end_date IS NULL OR end_date >= $2::date)
+        RETURNING id, total_sessions, used_sessions`,
+      [memberId, today],
+    );
+  }
+
+  setAttendanceMembership(attendanceId: string, membershipId: string): Promise<number> {
+    return sql.exec(`UPDATE attendances SET membership_id = $2 WHERE id = $1`, [attendanceId, membershipId]);
+  }
+
+  /** Real activity (not a login) feeds the inactivity batch. */
+  touchActivity(memberId: string, at: Date): Promise<number> {
+    return sql.exec(`UPDATE members SET last_activity_at = $2, updated_at = now() WHERE user_id = $1`, [memberId, at]);
   }
 }

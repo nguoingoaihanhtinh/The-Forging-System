@@ -120,7 +120,8 @@ describe("today's sessions a member can check into (CHK-02)", () => {
 
   it('opens 45 minutes before the start and closes 30 minutes after it', async () => {
     setClock(fixedClock(NOW)); // 17:30
-    expect(byTitle(await mine())).toEqual({ Evening: 'OPEN', Clash: 'OPEN', Riverside: 'NOT_YET_OPEN' });
+    // Clash starts at 18:30, so it only opens at 17:45.
+    expect(byTitle(await mine())).toEqual({ Evening: 'OPEN', Clash: 'NOT_YET_OPEN', Riverside: 'NOT_YET_OPEN' });
     const evening = (await mine()).body.data.sessions[0].checkin;
     expect(evening).toMatchObject({ canCheckin: true, reason: null, opensAt: '2026-11-02T10:15:00.000Z', closesAt: '2026-11-02T11:30:00.000Z' });
 
