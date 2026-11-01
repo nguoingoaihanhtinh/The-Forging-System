@@ -9,7 +9,9 @@ import 'package:hvp_forging/features/courses/data/course_repository_impl.dart';
 import 'package:hvp_forging/features/courses/domain/course.dart';
 import 'package:hvp_forging/features/courses/presentation/course_detail_screen.dart';
 import 'package:hvp_forging/features/courses/presentation/course_providers.dart';
+import 'package:hvp_forging/features/courses/domain/lesson_sections.dart';
 import 'package:hvp_forging/features/courses/presentation/courses_screen.dart';
+import 'package:hvp_forging/features/courses/presentation/lesson_detail_screen.dart';
 
 import '../../helpers/scripted_adapter.dart';
 import '../../helpers/test_harness.dart';
@@ -46,6 +48,26 @@ class FakeCourses implements CourseRepository {
               lessonNo: 3, weekNo: 1, title: 'COMBO 1-2', subtitle: 'Kiểm tra tuần', isAssessment: true, isGraduation: false, isAdvanced: false),
           LessonSummary(lessonNo: 4, weekNo: 2, title: 'HOOK (1)', isAssessment: false, isGraduation: false, isAdvanced: true),
         ],
+      );
+
+  @override
+  Future<Lesson> lesson(String courseId, int lessonNo) async => const Lesson(
+        courseId: 'c1',
+        objectives: 'Chủ đề tuần 1: Jab & cross.',
+        content: <String, dynamic>{
+          'drills': <String>['Khởi động (10p)', 'Đấm bao (4 hiệp)'],
+          'equipmentNotes': 'Găng 12oz.',
+          'coachMeta': <String, dynamic>{'ignored': true},
+        },
+        summary: LessonSummary(
+          lessonNo: 3,
+          weekNo: 1,
+          title: 'COMBO 1-2',
+          subtitle: 'Tuần 1 · Jab & cross',
+          isAssessment: true,
+          isGraduation: false,
+          isAdvanced: false,
+        ),
       );
 }
 
@@ -148,6 +170,68 @@ void main() {
     expect(find.text('KIỂM TRA'), findsOneWidget);
     expect(find.text('NÂNG CAO'), findsOneWidget);
     expect(find.byIcon(Icons.check), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+  });
+
+  test('CAT-04 repository loads a lesson with objectives and free-form content', () async {
+    final dio = createApiDio(
+      config: const AppConfig(apiBaseUrl: 'http://test.local/api/v1', tenantCode: 'hvp'),
+      tokens: MemoryTokenStore(const StoredTokens(accessToken: 'member-token', refreshToken: 'refresh')),
+    );
+    final adapter = ScriptedAdapter((request) => okEnvelope(<String, dynamic>{
+          'courseId': 'c1',
+          'lessonNo': 3,
+          'weekNo': 1,
+          'title': 'COMBO 1-2',
+          'subtitle': null,
+          'isAssessment': true,
+          'isGraduation': false,
+          'isAdvanced': false,
+          'objectives': 'Mục tiêu',
+          'content': <String, dynamic>{
+            'drills': <String>['a', 'b'],
+          },
+        }));
+    dio.httpClientAdapter = adapter;
+    final lesson = await CourseRepositoryImpl(ApiClient(dio)).lesson('c1', 3);
+    expect(adapter.requests.last.path, '/courses/c1/lessons/3');
+    expect(lesson.summary.isAssessment, isTrue);
+    expect(lesson.objectives, 'Mục tiêu');
+    expect(lesson.content['drills'], <String>['a', 'b']);
+  });
+
+  test('lessonSections shows objectives first, numbers drills and skips odd shapes', () async {
+    final sections = lessonSections(await FakeCourses().lesson('c1', 3));
+    expect(sections.map((s) => s.title), <String>['Mục tiêu', 'Giáo án buổi tập', 'Equipment notes']);
+    expect(sections[1].items, <String>['Khởi động (10p)', 'Đấm bao (4 hiệp)']);
+    expect(sections[1].numbered, isTrue);
+    expect(sections[2].text, 'Găng 12oz.');
+    expect(sections[2].numbered, isFalse);
+  });
+
+  test('lessonSections copes with a lesson that has no content at all', () {
+    const lesson = Lesson(
+      courseId: 'c1',
+      content: <String, dynamic>{},
+      summary: LessonSummary(lessonNo: 1, title: 't', isAssessment: false, isGraduation: false, isAdvanced: false),
+    );
+    expect(lessonSections(lesson), isEmpty);
+  });
+
+  testWidgets('lesson screen shows header, objectives and numbered drills', (tester) async {
+    await pumpHvp(tester, const LessonDetailScreen(courseId: 'c1', lessonNo: 3), overrides: [
+      currentUserIdProvider.overrideWithValue('member'),
+      courseRepositoryProvider.overrideWithValue(FakeCourses()),
+    ]);
+    await tester.pumpAndSettle();
+    expect(find.text('FOUNDATION · TUẦN 1 · BÀI 3'), findsOneWidget);
+    expect(find.text('COMBO 1-2'), findsOneWidget);
+    expect(find.text('KIỂM TRA'), findsOneWidget);
+    expect(find.text('MỤC TIÊU'), findsOneWidget);
+    expect(find.text('Chủ đề tuần 1: Jab & cross.'), findsOneWidget);
+    expect(find.text('GIÁO ÁN BUỔI TẬP'), findsOneWidget);
+    expect(find.text('Khởi động (10p)'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

@@ -22,6 +22,17 @@ class CourseRepositoryImpl implements CourseRepository {
     );
   }
 
+  @override
+  Future<Lesson> lesson(String courseId, int lessonNo) async {
+    final j = (await api.get('/courses/$courseId/lessons/$lessonNo')).dataMap;
+    return Lesson(
+      courseId: str(j, 'courseId', courseId),
+      summary: _lesson(j),
+      objectives: strOrNull(j, 'objectives'),
+      content: asMap(j['content']),
+    );
+  }
+
   Course _course(JsonMap j) => Course(
         id: str(j, 'id'),
         code: str(j, 'code'),

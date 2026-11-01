@@ -52,6 +52,22 @@ class LessonSummary {
   final bool isAdvanced;
 }
 
+/// Full lesson plan. `content` is free-form JSON an admin can edit; the
+/// seeded lessons carry `{ drills: [...] }`.
+class Lesson {
+  const Lesson({
+    required this.courseId,
+    required this.summary,
+    required this.content,
+    this.objectives,
+  });
+
+  final String courseId;
+  final LessonSummary summary;
+  final String? objectives;
+  final Map<String, dynamic> content;
+}
+
 class CourseDetail {
   const CourseDetail({required this.course, required this.lessons});
 
@@ -75,4 +91,6 @@ abstract interface class CourseRepository {
   Future<List<Course>> courses();
 
   Future<CourseDetail> course(String courseId);
+
+  Future<Lesson> lesson(String courseId, int lessonNo);
 }

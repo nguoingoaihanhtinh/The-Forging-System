@@ -8,6 +8,7 @@ import '../../features/auth/domain/auth_user.dart';
 import '../../features/armory/presentation/armory_catalog_screen.dart';
 import '../../features/courses/presentation/course_detail_screen.dart';
 import '../../features/courses/presentation/courses_screen.dart';
+import '../../features/courses/presentation/lesson_detail_screen.dart';
 import '../../features/fighter_record/presentation/screens/fighter_record_screen.dart';
 import '../route_paths.dart';
 import '../shell/profile_tab.dart';
@@ -152,13 +153,9 @@ List<RouteBase> studentRoutes() => <RouteBase>[
       ),
       GoRoute(
         path: StudentPaths.courseLessonPattern,
-        builder: (context, state) => ComingSoonPage(
-          title: 'Bài học',
-          owner: 'feature: lessons (CAT-04)',
-          icon: HvpIcons.book,
-          description:
-              'Khóa ${state.pathParameters['courseId'] ?? '-'}, bài ${state.pathParameters['lessonNo'] ?? '-'}.',
-          standalone: true,
+        builder: (context, state) => LessonDetailScreen(
+          courseId: state.pathParameters['courseId'] ?? '',
+          lessonNo: int.tryParse(state.pathParameters['lessonNo'] ?? '') ?? 0,
         ),
       ),
       GoRoute(

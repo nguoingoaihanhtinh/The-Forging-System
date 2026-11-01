@@ -18,3 +18,9 @@ final courseDetailProvider = FutureProvider.autoDispose.family<CourseDetail, Str
   ref.watch(currentUserIdProvider);
   return ref.watch(courseRepositoryProvider).course(courseId);
 });
+
+final lessonProvider =
+    FutureProvider.autoDispose.family<Lesson, ({String courseId, int lessonNo})>((ref, key) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(courseRepositoryProvider).lesson(key.courseId, key.lessonNo);
+});
