@@ -6,6 +6,7 @@ import '../../core/widgets/coming_soon_page.dart';
 import '../../core/widgets/hvp_button.dart';
 import '../../features/auth/domain/auth_user.dart';
 import '../../features/armory/presentation/armory_catalog_screen.dart';
+import '../../features/checkin/presentation/checkin_tab.dart';
 import '../../features/courses/presentation/course_detail_screen.dart';
 import '../../features/courses/presentation/courses_screen.dart';
 import '../../features/courses/presentation/lesson_detail_screen.dart';
@@ -70,12 +71,7 @@ List<RouteBase> studentRoutes() => <RouteBase>[
             label: 'Check-in',
             icon: HvpIcons.scan,
             activeIcon: HvpIcons.scanFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Check-in',
-              owner: 'feature: checkin',
-              icon: HvpIcons.scan,
-              description: 'Quét mã QR tại quầy lễ tân để điểm danh.',
-            ),
+            builder: (_) => const CheckinTab(),
           ),
           ShellTab(
             path: StudentPaths.armory,
@@ -94,6 +90,16 @@ List<RouteBase> studentRoutes() => <RouteBase>[
         ],
       ),
       // ---- pushed screens (full screen, outside the shell) ----
+      GoRoute(
+        path: StudentPaths.checkinScan,
+        builder: (context, state) => ComingSoonPage(
+          title: 'Quét mã check-in',
+          owner: 'feature: checkin (CHK-07)',
+          icon: HvpIcons.scan,
+          description: 'Buổi đã chọn: ${state.uri.queryParameters['sessionId'] ?? 'tự chọn theo chi nhánh'}.',
+          standalone: true,
+        ),
+      ),
       GoRoute(
         path: StudentPaths.fighterRecord,
         builder: (context, state) => const FighterRecordScreen(),

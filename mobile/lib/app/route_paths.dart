@@ -36,6 +36,11 @@ abstract final class StudentPaths {
   static const String profile = '/student/profile';
 
   // Pushed screens
+  static const String checkinScan = '/student/checkin/scan';
+
+  /// The scanner, optionally told which session the learner picked (`?sessionId=`).
+  static String checkinScanFor(String? sessionId) =>
+      sessionId == null ? checkinScan : '$checkinScan?sessionId=${Uri.encodeQueryComponent(sessionId)}';
   static const String fighterRecord = '/student/fighter-record';
   static const String streak = '/student/streak';
   static const String challenges = '/student/challenges';
