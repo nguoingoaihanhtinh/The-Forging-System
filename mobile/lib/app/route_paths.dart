@@ -42,6 +42,11 @@ abstract final class StudentPaths {
   static const String notifications = '/student/notifications';
   static const String membership = '/student/membership';
   static const String workLog = '/student/work-log';
+  static const String courses = '/student/courses';
+  static const String coursePattern = '/student/courses/:courseId';
+  static String course(String id) => '/student/courses/$id';
+  static const String courseLessonPattern = '/student/courses/:courseId/lessons/:lessonNo';
+  static String courseLesson(String courseId, int lessonNo) => '/student/courses/$courseId/lessons/$lessonNo';
   static const String lessonPattern = '/student/lessons/:id';
   static String lesson(String id) => '/student/lessons/$id';
 }
