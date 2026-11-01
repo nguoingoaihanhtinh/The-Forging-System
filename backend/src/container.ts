@@ -63,6 +63,7 @@ import { CourseService } from './modules/courses/course.service';
 import { CheckinRepository } from './modules/checkin/checkin.repository';
 import { checkinRoutes } from './modules/checkin/checkin.routes';
 import { CheckinCodeService } from './modules/checkin/checkin-code.service';
+import { CheckinSessionService } from './modules/checkin/checkin-session.service';
 // [imports:feature-modules] (one line per module, keep alphabetical)
 
 /** Everything the HTTP layer and the scheduled jobs need, wired once at startup. */
@@ -87,6 +88,7 @@ export interface Container {
     challenges: ChallengeService;
     courses: CourseService;
     checkinCodes: CheckinCodeService;
+    checkinSessions: CheckinSessionService;
     // [services:feature-modules] (declare as `name: Type;` and assign in the module block below)
   };
   storage: StorageService;
@@ -181,8 +183,11 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   services.schedule = schedule;
   const courses = new CourseService(new CourseRepository(), audit);
   services.courses = courses;
-  const checkinCodes = new CheckinCodeService(new CheckinRepository(), settings);
+  const checkinRepository = new CheckinRepository();
+  const checkinCodes = new CheckinCodeService(checkinRepository, settings);
   services.checkinCodes = checkinCodes;
+  const checkinSessions = new CheckinSessionService(checkinRepository, settings);
+  services.checkinSessions = checkinSessions;
   // [modules:feature-modules]
 
   // ---- routers ----
@@ -206,7 +211,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     batchRoutes(batch),
     scheduleRoutes(schedule),
     courseRoutes(courses),
-    checkinRoutes(checkinCodes),
+    checkinRoutes(checkinCodes, checkinSessions),
     // [routers:feature-modules]
   ];
 
