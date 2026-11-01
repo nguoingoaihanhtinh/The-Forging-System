@@ -66,6 +66,7 @@ services:
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL in .env.prod (https://your-domain)}
       ENABLE_SCHEDULER: "true"
       PUSH_PROVIDER: ${PUSH_PROVIDER:-console}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON:-}
       OTP_PROVIDER: ${OTP_PROVIDER:-console}
       SEED_DEMO: "false"
     # NOTE: no "ports:" - reached only through Caddy on the internal network.

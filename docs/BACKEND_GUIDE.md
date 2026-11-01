@@ -165,7 +165,7 @@ for (const tenantId of await lookupActiveTenantIds()) {
 - `.env` không commit; secret JWT tối thiểu 32 ký tự.
 - Token truy cập ngắn hạn (15 phút) + refresh token xoay vòng dùng một lần.
 - Upload ảnh (minh chứng, avatar) qua `POST /uploads?purpose=` rồi lưu URL; thay `LocalDiskStorage` bằng S3/MinIO bằng cách implement `StorageService`.
-- Push: `PUSH_PROVIDER=console|fcm`; OTP: `OTP_PROVIDER=console` (cần nhà cung cấp SMS khi lên production).
+- Push: `PUSH_PROVIDER=console|fcm` (`fcm` cần `FIREBASE_SERVICE_ACCOUNT_JSON` hoặc `GOOGLE_APPLICATION_CREDENTIALS`, thiếu thì server không khởi động); OTP: `OTP_PROVIDER=console` (cần nhà cung cấp SMS khi lên production).
 
 ## 8. Swagger UI (tài liệu API tự sinh)
 - Chạy dev rồi mở http://localhost:4000/api/docs (JSON: `/api/docs.json`). Tắt khi `NODE_ENV=production`.
