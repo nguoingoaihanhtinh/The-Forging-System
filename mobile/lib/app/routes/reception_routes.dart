@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/hvp_icons.dart';
 import '../../core/widgets/coming_soon_page.dart';
 import '../../features/auth/domain/auth_user.dart';
+import '../../features/branch_qr/presentation/branch_qr_route.dart';
 import '../../features/reception_checkin/domain/member_hit.dart';
 import '../../features/reception_checkin/presentation/assisted_checkin_screen.dart';
 import '../../features/reception_checkin/presentation/member_today_screen.dart';
@@ -60,6 +61,10 @@ List<RouteBase> receptionRoutes() => <RouteBase>[
         ],
       ),
       // ---- pushed screens (full screen, outside the shell) ----
+      GoRoute(
+        path: ReceptionPaths.branchQr,
+        builder: (context, state) => const BranchQrRoute(),
+      ),
       GoRoute(
         path: ReceptionPaths.memberTodayPattern,
         builder: (context, state) => MemberTodayScreen(

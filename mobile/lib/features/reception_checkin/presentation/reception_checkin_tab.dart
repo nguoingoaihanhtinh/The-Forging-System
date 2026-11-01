@@ -10,6 +10,7 @@ import '../../../core/design/hvp_icons.dart';
 import '../../../core/design/hvp_layout.dart';
 import '../../../core/widgets/async_body.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/hvp_button.dart';
 import '../../../core/widgets/hvp_text_field.dart';
 import '../domain/member_hit.dart';
 import 'reception_providers.dart';
@@ -64,6 +65,13 @@ class _ReceptionCheckinTabState extends ConsumerState<ReceptionCheckinTab> {
               Text('Check-in hỗ trợ', style: t.titleL),
               const SizedBox(height: 4),
               Text('Giúp học viên không tự check-in được. Cần ảnh minh chứng.', style: t.bodySmall),
+              const SizedBox(height: 12),
+              HvpButton.secondary(
+                label: 'Hiển thị mã QR quầy',
+                icon: HvpIcons.scan,
+                small: true,
+                onPressed: () => context.push(ReceptionPaths.branchQr),
+              ),
               const SizedBox(height: 14),
               HvpTextField(
                 label: 'Tìm học viên',

@@ -108,6 +108,7 @@ Future<void> _pump(WidgetTester tester, {required FakeSearch search, required Fa
       builder: (_, state) =>
           Scaffold(body: Text('ASSISTED:${state.pathParameters['memberId']}:${state.pathParameters['sessionId']}')),
     ),
+    GoRoute(path: ReceptionPaths.branchQr, builder: (_, __) => const Scaffold(body: Text('BRANCH-QR'))),
   ]);
   addTearDown(router.dispose);
   await tester.pumpWidget(ProviderScope(
@@ -259,5 +260,12 @@ void main() {
     await tester.tap(find.text('Nguyễn Thị Lan'));
     await tester.pumpAndSettle();
     expect(find.text('KHÔNG CÓ BUỔI NÀO HÔM NAY'), findsOneWidget);
+  });
+
+  testWidgets('has a way to the branch QR screen for the tablet at the desk', (tester) async {
+    await _pump(tester, search: FakeSearch(const MemberSearchResult(items: <MemberHit>[], total: 0)), today: FakeToday(_day(const <CheckinSession>[])));
+    await tester.tap(find.text('HIỂN THỊ MÃ QR QUẦY'));
+    await tester.pumpAndSettle();
+    expect(find.text('BRANCH-QR'), findsOneWidget);
   });
 }

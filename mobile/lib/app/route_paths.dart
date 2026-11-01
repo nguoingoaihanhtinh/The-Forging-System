@@ -68,6 +68,7 @@ abstract final class ReceptionPaths {
   static const String checkin = '/reception/checkin';
 
   // Pushed screens
+  static const String branchQr = '/reception/checkin/qr';
   static const String memberTodayPattern = '/reception/checkin/member/:memberId';
   static String memberToday(String memberId) => '/reception/checkin/member/$memberId';
   static const String assistedCheckinPattern = '/reception/checkin/member/:memberId/session/:sessionId';
