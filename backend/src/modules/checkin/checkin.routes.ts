@@ -12,6 +12,9 @@ import type { CheckinService } from './checkin.service';
 
 const branchParam = z.object({ branchId: z.string().uuid() });
 const memberParam = z.object({ memberId: z.string().uuid() });
+const assistedBody = z
+  .object({ sessionId: z.string().uuid(), evidenceUrl: z.string().trim().max(1000).optional() })
+  .strict();
 const checkinBody = z
   .object({
     payload: z.string().trim().min(1).max(200).optional(),
@@ -23,7 +26,7 @@ const checkinBody = z
 
 /**
  * Check-in APIs. CHK-01: the rotating code the front-desk screen shows. CHK-02: the sessions a member can check
- * into today. CHK-03: the member's own check-in.
+ * into today. CHK-03: the member's own check-in. CHK-04: front desk checking a member in.
  */
 export function checkinRoutes(codes: CheckinCodeService, sessions: CheckinSessionService, checkin: CheckinService): Router {
   const r = Router();
@@ -62,6 +65,16 @@ export function checkinRoutes(codes: CheckinCodeService, sessions: CheckinSessio
       const outcome = await checkin.checkIn(authOf(req).userId, req.body);
       // 201 only when this call recorded the check-in; a repeat or a "which session?" answer is a plain 200.
       return outcome.status === 'CHECKED_IN' && !outcome.alreadyCheckedIn ? created(outcome) : ok(outcome);
+    }),
+  );
+  r.post(
+    '/members/:memberId/checkin',
+    requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ params: memberParam, body: assistedBody }),
+    handle(async (req) => {
+      const { userId, roles, branchId } = authOf(req);
+      const outcome = await checkin.checkInFor(req.params.memberId, req.body, { userId, roles, branchId });
+      return outcome.alreadyCheckedIn ? ok(outcome) : created(outcome);
     }),
   );
   // Front desk checking a member in: staff see their own branch's sessions, admins every branch.

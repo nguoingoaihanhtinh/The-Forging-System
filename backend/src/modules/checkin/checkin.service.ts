@@ -1,7 +1,9 @@
-import { AppError } from '../../common/errors/app-error';
+import { AppError, badRequest, forbidden } from '../../common/errors/app-error';
 import { clock } from '../../common/utils/clock';
 import { logger } from '../../common/utils/logger';
 import { localDate } from '../../common/utils/time';
+import { env } from '../../config/env';
+import { RoleGroup } from '../../shared/roles';
 import type { AuditService } from '../audit/audit.service';
 import type { CheckinCodePort } from './checkin-code.service';
 import type { CheckinSessionService, CheckinSessionView, TodayCheckin } from './checkin-session.service';
@@ -37,8 +39,34 @@ export interface ChooseSession {
 
 export type CheckinOutcome = CheckedIn | ChooseSession;
 
+/** Front-desk staff checking a member in. */
+export interface FrontDeskActor {
+  userId: string;
+  roles: readonly string[];
+  /** Branch of the staff member; admins are not tied to it. */
+  branchId: string | null;
+}
+
+export interface AssistedCheckinInput {
+  sessionId: string;
+  /** Photo of the member at the desk, uploaded through POST /uploads?purpose=evidence. */
+  evidenceUrl?: string;
+}
+
 const SUCCESS = 'Check-in thành công. Buổi tập đang chờ Coach xác nhận - điểm chỉ được cộng sau khi Coach xác nhận.';
 const ALREADY = 'Bạn đã check-in buổi này rồi.';
+const ASSISTED_DONE = 'Đã check-in hộ học viên. Buổi tập đang chờ Coach xác nhận - điểm chỉ được cộng sau khi Coach xác nhận.';
+
+/** The proof must be a file this system stored. */
+function requireEvidence(url: string | undefined): string {
+  if (!url?.trim()) throw badRequest('Vui lòng chụp ảnh minh chứng khi check-in hộ.', undefined, 'CHECKIN_EVIDENCE_REQUIRED');
+  if (!url.startsWith(`${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/files/`)) {
+    throw badRequest('Ảnh minh chứng không hợp lệ.', undefined, 'INVALID_CHECKIN_EVIDENCE');
+  }
+  return url;
+}
+
+const isAdmin = (roles: readonly string[]) => roles.some((r) => (RoleGroup.ADMINS as readonly string[]).includes(r));
 
 const summaryOf = (s: CheckinSessionView): CheckedIn['session'] => ({
   sessionId: s.sessionId,
@@ -77,6 +105,30 @@ export class CheckinService {
     if (session.checkin.state === 'CHECKED_IN') return this.already(memberId, session, null);
     if (!session.checkin.canCheckin) throw errorForVerdict(session.checkin);
     return this.record({ memberId, session, by: null, evidenceUrl: null });
+  }
+
+  /**
+   * CHK-04: front-desk staff checks a member in, for members who cannot do it themselves. Same rules as self
+   * check-in (account, package, no clash) with two differences: a photo is required and the session stays open
+   * until it ends. A receptionist only handles sessions of their own branch, an admin any branch.
+   */
+  async checkInFor(memberId: string, input: AssistedCheckinInput, actor: FrontDeskActor): Promise<CheckedIn> {
+    try {
+      const evidenceUrl = requireEvidence(input.evidenceUrl);
+      const today = await this.sessions.listToday(memberId, 'ASSISTED');
+      const session = today.sessions.find((s) => s.sessionId === input.sessionId);
+      if (!session) throw sessionNotEligibleError();
+      if (!isAdmin(actor.roles) && session.branch.id !== actor.branchId) {
+        throw forbidden('Bạn chỉ check-in hộ cho buổi tập tại chi nhánh của mình.');
+      }
+      if (session.checkin.state === 'CHECKED_IN') return this.already(memberId, session, null);
+      if (!session.checkin.canCheckin) throw errorForVerdict(session.checkin);
+      const done = await this.record({ memberId, session, by: actor.userId, evidenceUrl });
+      return { ...done, message: ASSISTED_DONE };
+    } catch (err) {
+      if (err instanceof AppError) logger.warn({ memberId, by: actor.userId, code: err.code }, 'assisted check-in refused');
+      throw err;
+    }
   }
 
   /**

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { badRequest } from '../../src/common/errors/app-error';
 import type { AppError } from '../../src/common/errors/app-error';
 import { fixedClock, resetClock, setClock } from '../../src/common/utils/clock';
+import { env } from '../../src/config/env';
 import type { CheckinCodePort } from '../../src/modules/checkin/checkin-code.service';
 import type { CheckinSessionService, CheckinSessionView } from '../../src/modules/checkin/checkin-session.service';
 import type { AttendanceRow, CheckinRepository } from '../../src/modules/checkin/checkin.repository';
@@ -179,5 +180,66 @@ describe('check-in flow (CHK-03)', () => {
     const { service, repo } = setup([view('s1', 'q1'), view('s2', 'q7')]);
     expect(await codeOf(service.checkIn(MEMBER, { shortCode: '654321' }))).toBe('CHECKIN_CODE_INVALID');
     expect(repo.insertCheckin).not.toHaveBeenCalled();
+  });
+});
+
+describe('front-desk check-in (CHK-04)', () => {
+  afterEach(() => resetClock());
+
+  const PHOTO = `${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/files/evidence/desk.jpg`;
+  const desk = (branchId: string | null = 'q1') => ({ userId: 'desk-1', roles: ['RECEPTIONIST'], branchId });
+  const admin = { userId: 'admin-1', roles: ['ADMIN'], branchId: 'q1' as string | null };
+
+  it('checks the member in with the photo, recorded as done by the staff member', async () => {
+    const { service, repo, audit } = setup([view('s1', 'q1')]);
+    const out = await service.checkInFor(MEMBER, { sessionId: 's1', evidenceUrl: PHOTO }, desk());
+    expect(out).toMatchObject({ status: 'CHECKED_IN', alreadyCheckedIn: false, sessionsRemaining: 31 });
+    expect(out.message).toContain('check-in hộ');
+    expect(repo.insertCheckin).toHaveBeenCalledWith('s1', MEMBER, { at: NOW, checkedInBy: 'desk-1', evidenceUrl: PHOTO });
+    expect(repo.charge).toHaveBeenCalledWith(MEMBER, '2026-11-02');
+    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'CHECKIN_ASSISTED', actorId: 'desk-1' }));
+  });
+
+  it('requires a photo this system stored', async () => {
+    const { service, repo } = setup([view('s1', 'q1')]);
+    const none = (await service.checkInFor(MEMBER, { sessionId: 's1' }, desk()).catch((e: unknown) => e)) as AppError;
+    expect([none.status, none.code]).toEqual([400, 'CHECKIN_EVIDENCE_REQUIRED']);
+    const foreign = (await service.checkInFor(MEMBER, { sessionId: 's1', evidenceUrl: 'https://evil.test/a.jpg' }, desk()).catch((e: unknown) => e)) as AppError;
+    expect([foreign.status, foreign.code]).toEqual([400, 'INVALID_CHECKIN_EVIDENCE']);
+    expect(repo.insertCheckin).not.toHaveBeenCalled();
+  });
+
+  it('keeps a receptionist to their own branch while an admin may use any', async () => {
+    const { service, repo } = setup([view('s1', 'q7')]);
+    const err = (await service.checkInFor(MEMBER, { sessionId: 's1', evidenceUrl: PHOTO }, desk('q1')).catch((e: unknown) => e)) as AppError;
+    expect(err.status).toBe(403);
+    expect(repo.insertCheckin).not.toHaveBeenCalled();
+    await expect(service.checkInFor(MEMBER, { sessionId: 's1', evidenceUrl: PHOTO }, admin)).resolves.toMatchObject({ status: 'CHECKED_IN' });
+  });
+
+  it('only accepts a session on the list of the member for today', async () => {
+    const { service } = setup([view('s1', 'q1')]);
+    const err = (await service.checkInFor(MEMBER, { sessionId: 'other', evidenceUrl: PHOTO }, desk()).catch((e: unknown) => e)) as AppError;
+    expect([err.status, err.code]).toEqual([404, 'CHECKIN_SESSION_NOT_ELIGIBLE']);
+  });
+
+  it('does not charge twice for a member who already checked in', async () => {
+    const { service, repo } = setup([view('s1', 'q1', 'CHECKED_IN')]);
+    const out = await service.checkInFor(MEMBER, { sessionId: 's1', evidenceUrl: PHOTO }, desk());
+    expect(out).toMatchObject({ alreadyCheckedIn: true });
+    expect(repo.charge).not.toHaveBeenCalled();
+  });
+
+  it('still refuses what the rules refuse: a closed session, a blocked account, a clash', async () => {
+    expect(await codeOf(setup([view('s1', 'q1', 'CLOSED')]).service.checkInFor(MEMBER, { sessionId: 's1', evidenceUrl: PHOTO }, desk()))).toBe('CHECKIN_CLOSED');
+    const blocked = view('s1', 'q1', 'BLOCKED', { reason: 'ACCOUNT_INACTIVE', message: 'inactive' });
+    expect(await codeOf(setup([blocked]).service.checkInFor(MEMBER, { sessionId: 's1', evidenceUrl: PHOTO }, desk()))).toBe('ACCOUNT_INACTIVE');
+    const clash = view('s2', 'q1', 'OVERLAPS_CHECKED_IN', { reason: 'OVERLAPS_CHECKED_IN' });
+    expect(await codeOf(setup([clash]).service.checkInFor(MEMBER, { sessionId: 's2', evidenceUrl: PHOTO }, desk()))).toBe('OVERLAPS_CHECKED_IN');
+  });
+
+  it('fails when there is no package left to charge', async () => {
+    const { service } = setup([view('s1', 'q1')], { charge: false });
+    expect(await codeOf(service.checkInFor(MEMBER, { sessionId: 's1', evidenceUrl: PHOTO }, desk()))).toBe('MEMBERSHIP_INVALID');
   });
 });
