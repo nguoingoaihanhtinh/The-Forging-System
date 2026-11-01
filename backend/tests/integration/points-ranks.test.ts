@@ -111,6 +111,29 @@ describe('points ledger & rank engine', () => {
     expect(badges.status).toBe(200);
   });
 
+  it('stores a snapshot when a rank is earned and tells admins the standing (RK-04)', async () => {
+    await adjust(500);
+    advanceMonths(1.2);
+    await adjust(1);
+    expect(await rankOrder()).toBe(2);
+
+    const rank1 = (await ownerQuery<{ name_en: string }>(`SELECT name_en FROM ranks WHERE rank_order = 1`))[0].name_en;
+    const rows = await ownerQuery<{ earned_via: string; snapshot: { dp: number; fromRank: string; monthsInFromRank: number } | null }>(
+      `SELECT earned_via, snapshot FROM member_rank_history WHERE member_id = $1 ORDER BY earned_at, id`,
+      [memberId],
+    );
+    // The initial badge carries no snapshot; the promotion does.
+    expect(rows.map((r) => r.earned_via)).toEqual(['INITIAL', 'AUTO_UPGRADE']);
+    expect(rows[0].snapshot).toBeNull();
+    expect(rows[1].snapshot).toMatchObject({ dp: (await balances()).dp_balance, fromRank: rank1 });
+    expect(rows[1].snapshot!.monthsInFromRank).toBeGreaterThanOrEqual(1.1);
+    expect(rows[1].snapshot!.monthsInFromRank).toBeLessThan(1.4);
+
+    const note = (await ownerQuery<{ body: string }>(`SELECT body FROM notifications WHERE event_type = 'RANK_UP' ORDER BY created_at DESC LIMIT 1`))[0];
+    expect(note.body).toContain('đã đạt');
+    expect(note.body).toContain(`ở ${rank1}`);
+  });
+
   it('counts the waiting time from the current rank, not from joining', async () => {
     advanceMonths(1.2);
     await adjust(500);
@@ -150,6 +173,11 @@ describe('points ledger & rank engine', () => {
     expect(await rankOrder()).toBe(3);
     const after = await ctx.api.get('/api/v1/me/rank-history').set(bearer(memberToken));
     expect(JSON.stringify(after.body.data)).toContain('RESTORED');
+    // A restored rank skips the waiting period, so its admin note does not quote the time below it.
+    const restored = await ownerQuery<{ body: string }>(
+      `SELECT body FROM notifications WHERE event_type = 'RANK_UP' AND body LIKE '%khôi phục%' ORDER BY created_at DESC LIMIT 1`,
+    );
+    expect(restored[0].body).not.toContain('tháng ở');
   });
 
   it('keeps the coach trial for rank VI: a failed trial leaves the rank unchanged, a pass promotes', async () => {
@@ -174,5 +202,12 @@ describe('points ledger & rank engine', () => {
     const pass = await ctx.api.post(`/api/v1/rank-trials/${again.body.data.id}/decision`).set(bearer(token)).send({ result: 'PASS' });
     expect(pass.body.data.status).toBe('PASSED');
     expect(await rankOrder()).toBe(6);
+    const trialRow = (
+      await ownerQuery<{ snapshot: { fromRank: string } | null }>(
+        `SELECT snapshot FROM member_rank_history WHERE member_id = $1 AND earned_via = 'RANK_TRIAL_PASSED'`,
+        [memberId],
+      )
+    )[0];
+    expect(trialRow.snapshot?.fromRank).toBeTruthy();
   });
 });
