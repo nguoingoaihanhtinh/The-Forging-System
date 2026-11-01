@@ -35,6 +35,28 @@ export interface LessonDetail extends LessonSummary {
   content: unknown;
 }
 
+/** A lesson as returned to admins: the detail plus its id. */
+export interface LessonAdminView extends LessonDetail {
+  id: string;
+}
+
+/** Writable lesson fields (everything an admin can set; lessonNo is the identity, not a field). */
+export interface LessonFields {
+  title: string;
+  subtitle: string | null;
+  weekNo: number | null;
+  objectives: string | null;
+  content: Record<string, unknown> | null;
+  isAssessment: boolean;
+  isGraduation: boolean;
+  isAdvanced: boolean;
+}
+
+/** A lesson row including soft-deleted ones. */
+export interface LessonRecord extends LessonAdminView {
+  deletedAt: Date | null;
+}
+
 export interface CourseDetailView extends CourseView {
   lessons: LessonSummary[];
 }

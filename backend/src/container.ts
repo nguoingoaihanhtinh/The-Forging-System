@@ -175,7 +175,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   services.batch = batch;
   const schedule = new ScheduleService(new ScheduleRepository());
   services.schedule = schedule;
-  const courses = new CourseService(new CourseRepository());
+  const courses = new CourseService(new CourseRepository(), audit);
   services.courses = courses;
   // [modules:feature-modules]
 
