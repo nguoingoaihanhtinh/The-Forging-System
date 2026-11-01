@@ -66,6 +66,14 @@ abstract final class CoachPaths {
 
 abstract final class ReceptionPaths {
   static const String checkin = '/reception/checkin';
+
+  // Pushed screens
+  static const String memberTodayPattern = '/reception/checkin/member/:memberId';
+  static String memberToday(String memberId) => '/reception/checkin/member/$memberId';
+  static const String assistedCheckinPattern = '/reception/checkin/member/:memberId/session/:sessionId';
+  static String assistedCheckin(String memberId, String sessionId) =>
+      '/reception/checkin/member/$memberId/session/$sessionId';
+
   static const String memberships = '/reception/memberships';
   static const String stock = '/reception/stock';
   static const String handover = '/reception/handover';

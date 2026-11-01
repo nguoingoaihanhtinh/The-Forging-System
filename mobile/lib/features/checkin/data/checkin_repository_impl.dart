@@ -10,8 +10,13 @@ class CheckinRepositoryImpl implements CheckinRepository {
   final ApiClient api;
 
   @override
-  Future<TodayCheckin> today() async {
-    final j = (await api.get('/me/checkin/sessions')).dataMap;
+  Future<TodayCheckin> today() => _today('/me/checkin/sessions');
+
+  @override
+  Future<TodayCheckin> todayFor(String memberId) => _today('/members/$memberId/checkin/sessions');
+
+  Future<TodayCheckin> _today(String path) async {
+    final j = (await api.get(path)).dataMap;
     final eligibility = asMap(j['eligibility']);
     return TodayCheckin(
       date: str(j, 'date'),
@@ -35,6 +40,16 @@ class CheckinRepositoryImpl implements CheckinRepository {
     if (str(j, 'status') == 'CHOOSE_SESSION') {
       return ChooseSession(asList(j['sessions']).map((e) => _session(asMap(e))).toList(growable: false));
     }
+    return _checkedIn(j);
+  }
+
+  @override
+  Future<CheckedIn> checkInFor({required String memberId, required String sessionId, required String evidenceUrl}) async {
+    final j = (await api.post('/members/$memberId/checkin', body: <String, dynamic>{'sessionId': sessionId, 'evidenceUrl': evidenceUrl})).dataMap;
+    return _checkedIn(j);
+  }
+
+  CheckedIn _checkedIn(JsonMap j) {
     final session = asMap(j['session']);
     final startsAt = dateOrNull(session, 'startsAt') ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
     return CheckedIn(

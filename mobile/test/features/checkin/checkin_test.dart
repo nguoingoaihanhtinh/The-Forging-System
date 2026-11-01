@@ -55,8 +55,15 @@ class FakeCheckin implements CheckinRepository {
   Future<TodayCheckin> today() async => data;
 
   @override
+  Future<TodayCheckin> todayFor(String memberId) async => data;
+
+  @override
   Future<CheckinOutcome> submit({String? payload, String? shortCode, String? sessionId}) =>
       throw UnimplementedError('the Check-in tab never submits');
+
+  @override
+  Future<CheckedIn> checkInFor({required String memberId, required String sessionId, required String evidenceUrl}) =>
+      throw UnimplementedError('the Check-in tab never checks anyone in for someone else');
 }
 
 TodayCheckin _day(List<CheckinSession> sessions, {CheckinEligibility? eligibility}) => TodayCheckin(

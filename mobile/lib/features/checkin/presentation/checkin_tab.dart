@@ -18,6 +18,7 @@ import '../../../core/widgets/inline_banner.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../domain/checkin_session.dart';
 import 'checkin_providers.dart';
+import 'widgets/session_status.dart';
 
 /// How often the list is reloaded while the tab is open: windows open and close on the clock.
 const Duration checkinRefreshEvery = Duration(seconds: 60);
@@ -146,7 +147,7 @@ class _SessionCard extends StatelessWidget {
       child: HvpCard(
         accent: selected ? c.gold : null,
         onTap: onTap,
-        semanticLabel: '${session.title}, $range, ${_statusLabel(session)}',
+        semanticLabel: '${session.title}, $range, ${checkinStatusLabel(session)}',
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -173,7 +174,7 @@ class _SessionCard extends StatelessWidget {
                     spacing: 6,
                     runSpacing: 6,
                     children: <Widget>[
-                      StatusChip(label: _statusLabel(session), tone: _tone(session.state)),
+                      StatusChip(label: checkinStatusLabel(session), tone: checkinStatusTone(session.state)),
                       if (session.isExam) const StatusChip(label: 'Kiểm tra', tone: ChipTone.info),
                     ],
                   ),
@@ -188,38 +189,5 @@ class _SessionCard extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-String _statusLabel(CheckinSession s) {
-  switch (s.state) {
-    case CheckinState.open:
-      return 'Đang mở check-in';
-    case CheckinState.notYetOpen:
-      return 'Mở lúc ${formatTime(s.opensAt)}';
-    case CheckinState.closed:
-      return 'Đã đóng check-in';
-    case CheckinState.checkedIn:
-      return s.checkedInAt == null ? 'Đã check-in' : 'Đã check-in ${formatTime(s.checkedInAt!)}';
-    case CheckinState.overlapsCheckedIn:
-      return 'Trùng giờ';
-    case CheckinState.blocked:
-      return 'Chưa thể check-in';
-  }
-}
-
-ChipTone _tone(CheckinState state) {
-  switch (state) {
-    case CheckinState.open:
-      return ChipTone.success;
-    case CheckinState.checkedIn:
-      return ChipTone.gold;
-    case CheckinState.notYetOpen:
-      return ChipTone.info;
-    case CheckinState.closed:
-    case CheckinState.overlapsCheckedIn:
-      return ChipTone.warning;
-    case CheckinState.blocked:
-      return ChipTone.danger;
   }
 }

@@ -159,6 +159,7 @@ class CheckinFailureView extends StatefulWidget {
     required this.onRetry,
     required this.onRenew,
     required this.onBack,
+    this.forFrontDesk = false,
   });
 
   final CheckinFailure failure;
@@ -169,6 +170,9 @@ class CheckinFailureView extends StatefulWidget {
   final VoidCallback onRetry;
   final VoidCallback onRenew;
   final VoidCallback onBack;
+
+  /// Shown to the front desk: no "ask the front desk" hint, and a photo can be retaken.
+  final bool forFrontDesk;
 
   @override
   State<CheckinFailureView> createState() => _CheckinFailureViewState();
@@ -189,7 +193,7 @@ class _CheckinFailureViewState extends State<CheckinFailureView> {
 
     final hint = switch (f.action) {
       CheckinAction.wait when f.opensAt != null => 'Check-in mở lúc ${formatTime(f.opensAt!)}.',
-      CheckinAction.askFrontDesk => 'Bạn có thể nhờ lễ tân tại quầy check-in hộ.',
+      CheckinAction.askFrontDesk when !widget.forFrontDesk => 'Bạn có thể nhờ lễ tân tại quầy check-in hộ.',
       _ => null,
     };
 
@@ -198,6 +202,7 @@ class _CheckinFailureViewState extends State<CheckinFailureView> {
         : switch (f.action) {
             CheckinAction.rescan => (widget.typed ? 'Nhập lại' : 'Quét lại', widget.onScanAgain),
             CheckinAction.renewPackage => ('Gia hạn gói tập', widget.onRenew),
+            CheckinAction.attachPhoto => ('Chụp lại ảnh', widget.onScanAgain),
             _ => ('Quay lại', widget.onBack),
           };
 

@@ -24,6 +24,7 @@ class EvidencePhotoPicker extends ConsumerStatefulWidget {
     this.hint = 'Chụp hoặc chọn ảnh từ thư viện',
     this.purpose = UploadPurpose.evidence,
     this.initialUrl,
+    this.cameraOnly = false,
   });
 
   final ValueChanged<String?> onChanged;
@@ -31,6 +32,9 @@ class EvidencePhotoPicker extends ConsumerStatefulWidget {
   final String hint;
   final UploadPurpose purpose;
   final String? initialUrl;
+
+  /// Only a fresh photo is accepted (no gallery): proof that someone is at the desk now.
+  final bool cameraOnly;
 
   @override
   ConsumerState<EvidencePhotoPicker> createState() => _EvidencePhotoPickerState();
@@ -48,14 +52,16 @@ class _EvidencePhotoPickerState extends ConsumerState<EvidencePhotoPicker> {
   }
 
   Future<void> _choose() async {
-    final source = await showOptionSheet<ImageSource>(
-      context,
-      title: widget.label,
-      options: const <SheetOption<ImageSource>>[
-        SheetOption<ImageSource>(value: ImageSource.camera, label: 'Chụp ảnh', icon: HvpIcons.camera),
-        SheetOption<ImageSource>(value: ImageSource.gallery, label: 'Chọn từ thư viện', icon: HvpIcons.image),
-      ],
-    );
+    final source = widget.cameraOnly
+        ? ImageSource.camera
+        : await showOptionSheet<ImageSource>(
+            context,
+            title: widget.label,
+            options: const <SheetOption<ImageSource>>[
+              SheetOption<ImageSource>(value: ImageSource.camera, label: 'Chụp ảnh', icon: HvpIcons.camera),
+              SheetOption<ImageSource>(value: ImageSource.gallery, label: 'Chọn từ thư viện', icon: HvpIcons.image),
+            ],
+          );
     if (source == null || !mounted) return;
     final picked = await pickImage(source);
     if (picked == null || !mounted) return;

@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/hvp_icons.dart';
 import '../../core/widgets/coming_soon_page.dart';
 import '../../features/auth/domain/auth_user.dart';
+import '../../features/reception_checkin/domain/member_hit.dart';
+import '../../features/reception_checkin/presentation/assisted_checkin_screen.dart';
+import '../../features/reception_checkin/presentation/member_today_screen.dart';
+import '../../features/reception_checkin/presentation/reception_checkin_tab.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
 
@@ -17,12 +21,7 @@ List<RouteBase> receptionRoutes() => <RouteBase>[
             label: 'Check-in',
             icon: HvpIcons.scan,
             activeIcon: HvpIcons.scanFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Check-in',
-              owner: 'feature: reception_checkin',
-              icon: HvpIcons.scan,
-              description: 'Quét mã học viên và xác nhận điểm danh.',
-            ),
+            builder: (_) => const ReceptionCheckinTab(),
           ),
           ShellTab(
             path: ReceptionPaths.memberships,
@@ -59,5 +58,21 @@ List<RouteBase> receptionRoutes() => <RouteBase>[
             ),
           ),
         ],
+      ),
+      // ---- pushed screens (full screen, outside the shell) ----
+      GoRoute(
+        path: ReceptionPaths.memberTodayPattern,
+        builder: (context, state) => MemberTodayScreen(
+          memberId: state.pathParameters['memberId'] ?? '',
+          member: state.extra is MemberHit ? state.extra! as MemberHit : null,
+        ),
+      ),
+      GoRoute(
+        path: ReceptionPaths.assistedCheckinPattern,
+        builder: (context, state) => AssistedCheckinScreen(
+          memberId: state.pathParameters['memberId'] ?? '',
+          sessionId: state.pathParameters['sessionId'] ?? '',
+          member: state.extra is MemberHit ? state.extra! as MemberHit : null,
+        ),
       ),
     ];

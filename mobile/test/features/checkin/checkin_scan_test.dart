@@ -73,6 +73,9 @@ class FakeCheckin implements CheckinRepository {
   }
 
   @override
+  Future<TodayCheckin> todayFor(String memberId) => today();
+
+  @override
   Future<CheckinOutcome> submit({String? payload, String? shortCode, String? sessionId}) async {
     calls.add((payload: payload, sessionId: sessionId));
     if (shortCode != null) typed.add((shortCode: shortCode, sessionId: sessionId));
@@ -81,6 +84,10 @@ class FakeCheckin implements CheckinRepository {
     if (next is CheckinOutcome) return next;
     throw next;
   }
+
+  @override
+  Future<CheckedIn> checkInFor({required String memberId, required String sessionId, required String evidenceUrl}) =>
+      throw UnimplementedError('the student scan never checks in for someone else');
 }
 
 /// A scanner that "reads" [_payload] (or another code) when its buttons are pressed. The buttons sit between the
