@@ -93,8 +93,3 @@ CheckinSession? defaultCheckinSession(List<CheckinSession> sessions, DateTime no
   }
   return best;
 }
-
-abstract interface class CheckinRepository {
-  /// The member's sessions of today with their check-in state.
-  Future<TodayCheckin> today();
-}

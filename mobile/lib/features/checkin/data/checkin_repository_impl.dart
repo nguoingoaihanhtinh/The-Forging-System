@@ -1,5 +1,7 @@
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/json_utils.dart';
+import '../domain/checkin_outcome.dart';
+import '../domain/checkin_repository.dart';
 import '../domain/checkin_session.dart';
 
 class CheckinRepositoryImpl implements CheckinRepository {
@@ -19,6 +21,32 @@ class CheckinRepositoryImpl implements CheckinRepository {
         message: strOrNull(eligibility, 'message'),
       ),
       sessions: asList(j['sessions']).map((e) => _session(asMap(e))).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<CheckinOutcome> submit({String? payload, String? shortCode, String? sessionId}) async {
+    final j = (await api.post('/me/checkin', body: <String, dynamic>{
+      if (payload != null) 'payload': payload,
+      if (shortCode != null) 'shortCode': shortCode,
+      if (sessionId != null) 'sessionId': sessionId,
+    }))
+        .dataMap;
+    if (str(j, 'status') == 'CHOOSE_SESSION') {
+      return ChooseSession(asList(j['sessions']).map((e) => _session(asMap(e))).toList(growable: false));
+    }
+    final session = asMap(j['session']);
+    final startsAt = dateOrNull(session, 'startsAt') ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    return CheckedIn(
+      alreadyCheckedIn: boolOf(j, 'alreadyCheckedIn'),
+      checkedInAt: dateOrNull(j, 'checkedInAt') ?? DateTime.now().toUtc(),
+      sessionId: str(session, 'sessionId'),
+      sessionTitle: str(session, 'title', 'Buổi tập'),
+      startsAt: startsAt,
+      endsAt: dateOrNull(session, 'endsAt') ?? startsAt,
+      branchName: str(asMap(session['branch']), 'name'),
+      sessionsRemaining: j['sessionsRemaining'] == null ? null : intOf(j, 'sessionsRemaining'),
+      message: str(j, 'message', 'Check-in thành công.'),
     );
   }
 

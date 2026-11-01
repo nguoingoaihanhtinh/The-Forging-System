@@ -12,6 +12,8 @@ import 'package:hvp_forging/core/storage/token_store.dart';
 import 'package:hvp_forging/core/widgets/entrance.dart';
 import 'package:hvp_forging/features/auth/presentation/providers/auth_controller.dart';
 import 'package:hvp_forging/features/checkin/data/checkin_repository_impl.dart';
+import 'package:hvp_forging/features/checkin/domain/checkin_outcome.dart';
+import 'package:hvp_forging/features/checkin/domain/checkin_repository.dart';
 import 'package:hvp_forging/features/checkin/domain/checkin_session.dart';
 import 'package:hvp_forging/features/checkin/presentation/checkin_providers.dart';
 import 'package:hvp_forging/features/checkin/presentation/checkin_tab.dart';
@@ -51,6 +53,10 @@ class FakeCheckin implements CheckinRepository {
 
   @override
   Future<TodayCheckin> today() async => data;
+
+  @override
+  Future<CheckinOutcome> submit({String? payload, String? shortCode, String? sessionId}) =>
+      throw UnimplementedError('the Check-in tab never submits');
 }
 
 TodayCheckin _day(List<CheckinSession> sessions, {CheckinEligibility? eligibility}) => TodayCheckin(

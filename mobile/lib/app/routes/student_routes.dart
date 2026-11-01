@@ -6,6 +6,7 @@ import '../../core/widgets/coming_soon_page.dart';
 import '../../core/widgets/hvp_button.dart';
 import '../../features/auth/domain/auth_user.dart';
 import '../../features/armory/presentation/armory_catalog_screen.dart';
+import '../../features/checkin/presentation/checkin_scan_screen.dart';
 import '../../features/checkin/presentation/checkin_tab.dart';
 import '../../features/courses/presentation/course_detail_screen.dart';
 import '../../features/courses/presentation/courses_screen.dart';
@@ -92,13 +93,7 @@ List<RouteBase> studentRoutes() => <RouteBase>[
       // ---- pushed screens (full screen, outside the shell) ----
       GoRoute(
         path: StudentPaths.checkinScan,
-        builder: (context, state) => ComingSoonPage(
-          title: 'Quét mã check-in',
-          owner: 'feature: checkin (CHK-07)',
-          icon: HvpIcons.scan,
-          description: 'Buổi đã chọn: ${state.uri.queryParameters['sessionId'] ?? 'tự chọn theo chi nhánh'}.',
-          standalone: true,
-        ),
+        builder: (context, state) => CheckinScanScreen(sessionId: state.uri.queryParameters['sessionId']),
       ),
       GoRoute(
         path: StudentPaths.fighterRecord,
