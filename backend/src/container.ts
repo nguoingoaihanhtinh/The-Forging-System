@@ -57,6 +57,9 @@ import { jobs, registerJob } from './jobs/registry';
 import { ScheduleRepository } from './modules/schedule/schedule.repository';
 import { scheduleRoutes } from './modules/schedule/schedule.routes';
 import { ScheduleService } from './modules/schedule/schedule.service';
+import { CourseRepository } from './modules/courses/course.repository';
+import { courseRoutes } from './modules/courses/course.routes';
+import { CourseService } from './modules/courses/course.service';
 // [imports:feature-modules] (one line per module, keep alphabetical)
 
 /** Everything the HTTP layer and the scheduled jobs need, wired once at startup. */
@@ -79,6 +82,7 @@ export interface Container {
     armory: ArmoryService;
     redemptions: RedemptionService;
     challenges: ChallengeService;
+    courses: CourseService;
     // [services:feature-modules] (declare as `name: Type;` and assign in the module block below)
   };
   storage: StorageService;
@@ -171,6 +175,8 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   services.batch = batch;
   const schedule = new ScheduleService(new ScheduleRepository());
   services.schedule = schedule;
+  const courses = new CourseService(new CourseRepository());
+  services.courses = courses;
   // [modules:feature-modules]
 
   // ---- routers ----
@@ -193,6 +199,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     membershipRoutes(memberships),
     batchRoutes(batch),
     scheduleRoutes(schedule),
+    courseRoutes(courses),
     // [routers:feature-modules]
   ];
 
