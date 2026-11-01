@@ -17,6 +17,7 @@ import '../domain/checkin_outcome.dart';
 import '../domain/checkin_session.dart';
 import 'checkin_providers.dart';
 import 'checkin_scan_controller.dart';
+import 'widgets/manual_code_sheet.dart';
 
 /// The member points the camera at the QR on the front-desk screen; the server checks it in.
 /// [sessionId] is the session picked on the Check-in tab (optional).
@@ -31,6 +32,12 @@ class CheckinScanScreen extends ConsumerWidget {
     } else {
       context.go(StudentPaths.checkin);
     }
+  }
+
+  /// The member cannot scan (no camera, web, a damaged QR): ask for the 6 digits and send them the same way.
+  Future<void> _enterCode(BuildContext context, WidgetRef ref) async {
+    final digits = await showManualCodeSheet(context);
+    if (digits != null) await ref.read(checkinScanProvider.notifier).onTypedCode(digits, sessionId: sessionId);
   }
 
   @override
@@ -55,10 +62,32 @@ class CheckinScanScreen extends ConsumerWidget {
               right: 24,
               child: _Hint(session: pickedSession),
             ),
+            Positioned(
+              bottom: 24,
+              left: 24,
+              right: 24,
+              child: Center(
+                child: HvpButton.secondary(
+                  label: 'Nhập mã thủ công',
+                  icon: HvpIcons.list,
+                  small: true,
+                  onPressed: () => _enterCode(context, ref),
+                ),
+              ),
+            ),
           ],
           if (state is ScanSubmitting) const _Busy(),
           if (state is ScanChoosing) _ChooseSessionPanel(state: state, onPick: controller.choose, onCancel: controller.scanAgain),
-          if (state is ScanFailed) _FailurePanel(state: state, controller: controller, onLeave: () => _leave(context)),
+          if (state is ScanFailed)
+            _FailurePanel(
+              state: state,
+              controller: controller,
+              onLeave: () => _leave(context),
+              onEnterAgain: () {
+                controller.scanAgain();
+                _enterCode(context, ref);
+              },
+            ),
           if (state is ScanDone) _SuccessPanel(result: state.result, onDone: () => _leave(context)),
         ],
       ),
@@ -183,11 +212,14 @@ class _ChooseSessionPanel extends StatelessWidget {
 }
 
 class _FailurePanel extends StatelessWidget {
-  const _FailurePanel({required this.state, required this.controller, required this.onLeave});
+  const _FailurePanel({required this.state, required this.controller, required this.onLeave, required this.onEnterAgain});
 
   final ScanFailed state;
   final CheckinScanController controller;
   final VoidCallback onLeave;
+
+  /// Reopens the typed-code form after a refused typed code.
+  final VoidCallback onEnterAgain;
 
   @override
   Widget build(BuildContext context) {
@@ -199,8 +231,8 @@ class _FailurePanel extends StatelessWidget {
       label = 'Thử lại';
       onPressed = controller.retry;
     } else if (action == CheckinAction.rescan) {
-      label = 'Quét lại';
-      onPressed = controller.scanAgain;
+      label = state.code.isTyped ? 'Nhập lại' : 'Quét lại';
+      onPressed = state.code.isTyped ? onEnterAgain : controller.scanAgain;
     } else {
       label = 'Quay lại';
       onPressed = onLeave;

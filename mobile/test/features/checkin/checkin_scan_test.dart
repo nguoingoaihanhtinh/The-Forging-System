@@ -19,6 +19,7 @@ import 'package:hvp_forging/features/checkin/domain/checkin_outcome.dart';
 import 'package:hvp_forging/features/checkin/domain/checkin_repository.dart';
 import 'package:hvp_forging/features/checkin/domain/checkin_session.dart';
 import 'package:hvp_forging/features/checkin/presentation/checkin_providers.dart';
+import 'package:hvp_forging/features/checkin/presentation/checkin_scan_controller.dart';
 import 'package:hvp_forging/features/checkin/presentation/checkin_scan_screen.dart';
 
 import '../../helpers/scripted_adapter.dart';
@@ -61,6 +62,7 @@ class FakeCheckin implements CheckinRepository {
   /// Answers of successive `submit` calls: an outcome, an exception, or a future.
   final List<Object> answers = <Object>[];
   final List<({String? payload, String? sessionId})> calls = <({String? payload, String? sessionId})>[];
+  final List<({String shortCode, String? sessionId})> typed = <({String shortCode, String? sessionId})>[];
   int todayCalls = 0;
 
   @override
@@ -72,6 +74,7 @@ class FakeCheckin implements CheckinRepository {
   @override
   Future<CheckinOutcome> submit({String? payload, String? shortCode, String? sessionId}) async {
     calls.add((payload: payload, sessionId: sessionId));
+    if (shortCode != null) typed.add((shortCode: shortCode, sessionId: sessionId));
     final next = answers.removeAt(0);
     if (next is Future<CheckinOutcome>) return next;
     if (next is CheckinOutcome) return next;
@@ -79,19 +82,16 @@ class FakeCheckin implements CheckinRepository {
   }
 }
 
-/// A scanner that "reads" [_payload] (or another code) when its buttons are pressed. The buttons sit at the
-/// bottom, clear of the viewfinder frame drawn over the middle of the camera view.
+/// A scanner that "reads" [_payload] (or another code) when its buttons are pressed. The buttons sit between the
+/// viewfinder frame (middle) and the "type the code" button (bottom), clear of both.
 Widget _fakeScanner(BuildContext context, ValueChanged<String> onCode) => Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            TextButton(onPressed: () => onCode(_payload), child: const Text('READ-A')),
-            TextButton(onPressed: () => onCode('HVP|Q1|1|58739403|bbbbbbbbbbbbbbbb'), child: const Text('READ-B')),
-          ],
-        ),
+      alignment: const Alignment(0, 0.55),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TextButton(onPressed: () => onCode(_payload), child: const Text('READ-A')),
+          TextButton(onPressed: () => onCode('HVP|Q1|1|58739403|bbbbbbbbbbbbbbbb'), child: const Text('READ-B')),
+        ],
       ),
     );
 
@@ -344,5 +344,113 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     // The scan screen reads today's list for the picked-session chip; success invalidates it, so it loads again.
     expect(repo.todayCalls, greaterThan(before));
+  });
+
+  group('CHK-08 typing the code', () {
+    Future<void> openSheet(WidgetTester tester) async {
+      await tester.tap(find.text('NHẬP MÃ THỦ CÔNG'));
+      // The viewfinder behind the sheet animates forever, so settle for a fixed time instead.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+    }
+
+    Future<void> typeAndSend(WidgetTester tester, String digits) async {
+      await tester.enterText(find.byType(TextField), digits);
+      await tester.pump();
+      await tester.tap(find.text('CHECK-IN'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    testWidgets('checks in with the 6 digits when the member cannot scan', (tester) async {
+      final repo = FakeCheckin()..answers.add(_checkedIn());
+      await _pumpScan(tester, repo);
+      await openSheet(tester);
+      expect(find.text('Nhập 6 chữ số hiển thị dưới mã QR trên màn hình phòng tập.'), findsOneWidget);
+
+      await typeAndSend(tester, '482913');
+      expect(repo.typed, <({String shortCode, String? sessionId})>[(shortCode: '482913', sessionId: 's1')]);
+      expect(repo.calls.single.payload, isNull);
+      expect(find.text('CHECK-IN THÀNH CÔNG'), findsOneWidget);
+    });
+
+    testWidgets('only sends exactly 6 digits and drops anything else typed', (tester) async {
+      final repo = FakeCheckin()..answers.add(_checkedIn());
+      await _pumpScan(tester, repo);
+      await openSheet(tester);
+
+      await tester.enterText(find.byType(TextField), '12a4 5');
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '1245'); // letters and spaces never get in
+      await tester.tap(find.text('CHECK-IN'));
+      await tester.pump();
+      expect(repo.typed, isEmpty);
+      expect(find.text('Nhập 6 chữ số hiển thị dưới mã QR trên màn hình phòng tập.'), findsOneWidget); // the form is still open
+
+      await tester.enterText(find.byType(TextField), '1234567'); // a 7th digit is not accepted either
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, '123456');
+      await tester.tap(find.text('CHECK-IN'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(repo.typed.single.shortCode, '123456');
+    });
+
+    testWidgets('closing the form sends nothing', (tester) async {
+      final repo = FakeCheckin();
+      await _pumpScan(tester, repo);
+      await openSheet(tester);
+      await tester.tapAt(const Offset(195, 40)); // outside the sheet
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(repo.typed, isEmpty);
+      expect(find.text('Đưa mã QR trên màn hình phòng tập vào khung'), findsOneWidget);
+    });
+
+    testWidgets('lets the member type again after a refused code, even the same digits', (tester) async {
+      final repo = FakeCheckin()
+        ..answers.addAll(<Object>[
+          _refusal('CHECKIN_CODE_INVALID', 'Mã QR không hợp lệ. Vui lòng quét mã trên màn hình phòng tập.', 'RESCAN', status: 400),
+          _checkedIn(),
+        ]);
+      await _pumpScan(tester, repo);
+      await openSheet(tester);
+      await typeAndSend(tester, '482913');
+      expect(find.text('Mã QR không hợp lệ. Vui lòng quét mã trên màn hình phòng tập.'), findsOneWidget);
+      expect(find.text('QUÉT LẠI'), findsNothing);
+
+      await tester.tap(find.text('NHẬP LẠI'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('Nhập 6 chữ số hiển thị dưới mã QR trên màn hình phòng tập.'), findsOneWidget);
+      await typeAndSend(tester, '482913');
+      expect(repo.typed.map((t) => t.shortCode), <String>['482913', '482913']);
+      expect(find.text('CHECK-IN THÀNH CÔNG'), findsOneWidget);
+    });
+
+    testWidgets('asks which session after a typed code and sends the digits again with the pick', (tester) async {
+      final repo = FakeCheckin()..answers.addAll(<Object>[ChooseSession(<CheckinSession>[_open('a', 'Class A', 11), _open('b', 'Class B', 12)]), _checkedIn()]);
+      await _pumpScan(tester, repo, sessionId: null);
+      await openSheet(tester);
+      await typeAndSend(tester, '482913');
+      expect(find.text('Bạn check-in buổi nào?'), findsOneWidget);
+
+      await tester.tap(find.text('Class B'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(repo.typed, <({String shortCode, String? sessionId})>[(shortCode: '482913', sessionId: null), (shortCode: '482913', sessionId: 'b')]);
+      expect(find.text('CHECK-IN THÀNH CÔNG'), findsOneWidget);
+    });
+
+    test('the controller ignores anything that is not 6 digits', () async {
+      final repo = FakeCheckin();
+      final container = ProviderContainer(overrides: [checkinRepositoryProvider.overrideWithValue(repo)]);
+      addTearDown(container.dispose);
+      final controller = container.read(checkinScanProvider.notifier);
+      for (final bad in <String>['', '12345', '1234567', 'abcdef', '12 456']) {
+        await controller.onTypedCode(bad);
+      }
+      expect(repo.calls, isEmpty);
+      expect(container.read(checkinScanProvider), isA<ScanIdle>());
+    });
   });
 }
