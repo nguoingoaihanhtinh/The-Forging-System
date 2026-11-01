@@ -25,6 +25,11 @@ class NotificationsScreen extends ConsumerWidget {
     final inbox = ref.watch(notificationsProvider);
     final unread = inbox.valueOrNull?.unread ?? 0;
     final notifier = ref.read(notificationsProvider.notifier);
+    // Every load, refresh and read leaves the exact unread count here: hand it to the bell without a request.
+    ref.listen<AsyncValue<NotificationsState>>(notificationsProvider, (_, next) {
+      final count = next.valueOrNull?.unread;
+      if (count != null) ref.read(unreadCountProvider.notifier).setCount(count);
+    });
 
     Future<void> readAll() async {
       if (!await notifier.markAllRead() && context.mounted) {

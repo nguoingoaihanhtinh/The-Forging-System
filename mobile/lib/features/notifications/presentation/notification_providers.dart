@@ -123,3 +123,26 @@ class NotificationsNotifier extends AutoDisposeAsyncNotifier<NotificationsState>
 
 final notificationsProvider =
     AsyncNotifierProvider.autoDispose<NotificationsNotifier, NotificationsState>(NotificationsNotifier.new);
+
+/// The number on the bell. It is kept up to date by polling and by the inbox screen, which knows the exact
+/// count after every read; a failed refresh keeps the last number rather than hiding the badge.
+class UnreadCountNotifier extends AsyncNotifier<int> {
+  @override
+  Future<int> build() async {
+    if (ref.watch(currentUserIdProvider) == null) return 0; // signed out: nothing to count
+    return ref.read(notificationRepositoryProvider).unreadCount();
+  }
+
+  void setCount(int count) => state = AsyncData<int>(count < 0 ? 0 : count);
+
+  Future<void> refresh() async {
+    if (ref.read(currentUserIdProvider) == null) return;
+    try {
+      state = AsyncData<int>(await ref.read(notificationRepositoryProvider).unreadCount());
+    } catch (_) {
+      // keep showing the last known count
+    }
+  }
+}
+
+final unreadCountProvider = AsyncNotifierProvider<UnreadCountNotifier, int>(UnreadCountNotifier.new);

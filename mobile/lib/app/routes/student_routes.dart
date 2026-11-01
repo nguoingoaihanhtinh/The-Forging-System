@@ -13,6 +13,7 @@ import '../../features/courses/presentation/courses_screen.dart';
 import '../../features/courses/presentation/lesson_detail_screen.dart';
 import '../../features/fighter_record/presentation/screens/fighter_record_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
+import '../../features/notifications/presentation/widgets/notification_bell.dart';
 import '../route_paths.dart';
 import '../shell/profile_tab.dart';
 import '../shell/shell_tab.dart';
@@ -25,6 +26,7 @@ List<RouteBase> studentRoutes() => <RouteBase>[
         role: AppRole.student,
         raisedIndex: 2,
         accountInAppBar: false,
+        actions: const <Widget>[NotificationBell()],
         tabs: <ShellTab>[
           ShellTab(
             path: StudentPaths.home,
@@ -52,12 +54,6 @@ List<RouteBase> studentRoutes() => <RouteBase>[
                     icon: HvpIcons.book,
                     small: true,
                     onPressed: () => context.push(StudentPaths.courses),
-                  ),
-                  HvpButton.gold(
-                    label: 'Thông báo',
-                    icon: HvpIcons.bell,
-                    small: true,
-                    onPressed: () => context.push(StudentPaths.notifications),
                   ),
                 ],
               ),

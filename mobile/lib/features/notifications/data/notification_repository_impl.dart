@@ -21,6 +21,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
+  Future<int> unreadCount() async => intOf((await api.get('/me/notifications/unread-count')).dataMap, 'unread');
+
+  @override
   Future<void> markRead(String id) async {
     await api.post('/me/notifications/$id/read');
   }

@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hvp_forging/app/route_paths.dart';
+import 'package:hvp_forging/core/design/hvp_text_styles.dart';
+import 'package:hvp_forging/core/design/hvp_theme.dart';
+import 'package:hvp_forging/core/widgets/entrance.dart';
 import 'package:hvp_forging/core/config/app_config.dart';
 import 'package:hvp_forging/core/design/hvp_icons.dart';
 import 'package:hvp_forging/core/error/api_exception.dart';
@@ -11,6 +17,7 @@ import 'package:hvp_forging/features/notifications/data/notification_repository_
 import 'package:hvp_forging/features/notifications/domain/app_notification.dart';
 import 'package:hvp_forging/features/notifications/presentation/notification_providers.dart';
 import 'package:hvp_forging/features/notifications/presentation/notifications_screen.dart';
+import 'package:hvp_forging/features/notifications/presentation/widgets/notification_bell.dart';
 
 import '../../helpers/scripted_adapter.dart';
 import '../../helpers/test_harness.dart';
@@ -41,16 +48,28 @@ class FakeNotifications implements NotificationRepository {
     return NotificationPage(items: items, unread: unread, total: pages.fold<int>(0, (sum, p) => sum + p.length), hasMore: page < pages.length);
   }
 
+  int unreadCalls = 0;
+  bool failUnreadCount = false;
+
+  @override
+  Future<int> unreadCount() async {
+    unreadCalls++;
+    if (failUnreadCount) throw const ApiException(code: ApiErrorCodes.network, message: 'Không có kết nối mạng.');
+    return unread;
+  }
+
   @override
   Future<void> markRead(String id) async {
     if (failWrites) throw const ApiException(code: ApiErrorCodes.network, message: 'Không có kết nối mạng.');
     reads.add(id);
+    if (unread > 0) unread--;
   }
 
   @override
   Future<void> markAllRead() async {
     if (failWrites) throw const ApiException(code: ApiErrorCodes.network, message: 'Không có kết nối mạng.');
     readAllCalls++;
+    unread = 0;
   }
 }
 
@@ -200,5 +219,118 @@ void main() {
     await _pump(tester, FakeNotifications(<List<AppNotification>>[<AppNotification>[]]));
     expect(find.text('CHƯA CÓ THÔNG BÁO'), findsOneWidget);
     expect(find.text('Đọc tất cả'), findsNothing);
+  });
+
+  group('NTF-03 bell', () {
+    /// A home page with the bell in its app bar, and the inbox one tap away, like the student shell.
+    Future<void> pumpBell(WidgetTester tester, FakeNotifications repo, {String? userId = 'member'}) async {
+      HvpFonts.useGoogleFonts = false;
+      hvpEntranceEnabled = false;
+      usePhoneSurface(tester);
+      final router = GoRouter(routes: <RouteBase>[
+        GoRoute(
+          path: '/',
+          builder: (_, __) => Scaffold(appBar: AppBar(actions: const <Widget>[NotificationBell()]), body: const Text('HOME')),
+        ),
+        GoRoute(path: StudentPaths.notifications, builder: (_, __) => const NotificationsScreen()),
+      ]);
+      addTearDown(router.dispose);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          currentUserIdProvider.overrideWithValue(userId),
+          notificationRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: MaterialApp.router(theme: HvpTheme.light(), darkTheme: HvpTheme.dark(), themeMode: ThemeMode.dark, routerConfig: router),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    FakeNotifications server({int unread = 3}) => FakeNotifications(<List<AppNotification>>[
+          <AppNotification>[for (var i = 1; i <= unread; i++) _n('$i')],
+        ], unread: unread);
+
+    test('the repository reads the unread count', () async {
+      final dio = createApiDio(
+        config: const AppConfig(apiBaseUrl: 'http://test.local/api/v1', tenantCode: 'hvp'),
+        tokens: MemoryTokenStore(const StoredTokens(accessToken: 'member-token', refreshToken: 'refresh')),
+      );
+      final adapter = ScriptedAdapter((request) => okEnvelope(<String, dynamic>{'unread': 7}));
+      dio.httpClientAdapter = adapter;
+      expect(await NotificationRepositoryImpl(ApiClient(dio)).unreadCount(), 7);
+      expect(adapter.requests.last.path, '/me/notifications/unread-count');
+    });
+
+    testWidgets('shows how many are unread', (tester) async {
+      await pumpBell(tester, server(unread: 3));
+      expect(find.text('3'), findsOneWidget);
+    });
+
+    testWidgets('shows no badge when there is nothing unread', (tester) async {
+      await pumpBell(tester, server(unread: 0));
+      expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isFalse);
+    });
+
+    testWidgets('caps a long count at 99+', (tester) async {
+      await pumpBell(tester, FakeNotifications(<List<AppNotification>>[<AppNotification>[]], unread: 250));
+      expect(find.text('99+'), findsOneWidget);
+    });
+
+    testWidgets('opens the inbox, and the number follows what was read there', (tester) async {
+      final repo = server(unread: 3);
+      await pumpBell(tester, repo);
+
+      await tester.tap(find.byType(NotificationBell));
+      await tester.pumpAndSettle();
+      expect(find.text('Thông báo 1'), findsOneWidget);
+
+      await tester.tap(find.text('Thông báo 1'));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('HOME'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('3'), findsNothing);
+    });
+
+    testWidgets('clears the badge after reading everything', (tester) async {
+      final repo = server(unread: 3);
+      await pumpBell(tester, repo);
+      await tester.tap(find.byType(NotificationBell));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Đọc tất cả'));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isFalse);
+    });
+
+    testWidgets('looks again every minute and picks up new notifications', (tester) async {
+      final repo = server(unread: 1);
+      await pumpBell(tester, repo);
+      expect(find.text('1'), findsOneWidget);
+      final before = repo.unreadCalls;
+
+      repo.unread = 4; // something arrived on the server
+      await tester.pump(bellRefreshEvery);
+      await tester.pumpAndSettle();
+      expect(repo.unreadCalls, greaterThan(before));
+      expect(find.text('4'), findsOneWidget);
+    });
+
+    testWidgets('keeps the last number when a refresh fails', (tester) async {
+      final repo = server(unread: 2);
+      await pumpBell(tester, repo);
+      repo.failUnreadCount = true;
+      await tester.pump(bellRefreshEvery);
+      await tester.pumpAndSettle();
+      expect(find.text('2'), findsOneWidget);
+    });
+
+    testWidgets('does not ask the server while nobody is signed in', (tester) async {
+      final repo = server(unread: 5);
+      await pumpBell(tester, repo, userId: null);
+      expect(repo.unreadCalls, 0);
+      expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isFalse);
+    });
   });
 }

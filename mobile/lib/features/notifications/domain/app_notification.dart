@@ -52,6 +52,9 @@ class NotificationPage {
 abstract interface class NotificationRepository {
   Future<NotificationPage> list({required int page, required int limit});
 
+  /// Unread notifications over the whole inbox.
+  Future<int> unreadCount();
+
   Future<void> markRead(String id);
 
   Future<void> markAllRead();

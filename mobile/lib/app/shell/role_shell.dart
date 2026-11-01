@@ -21,6 +21,7 @@ class RoleShell extends StatelessWidget {
     required this.navigationShell,
     this.raisedIndex,
     this.accountInAppBar = true,
+    this.actions = const <Widget>[],
   });
 
   final AppRole role;
@@ -28,6 +29,9 @@ class RoleShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
   final int? raisedIndex;
   final bool accountInAppBar;
+
+  /// Extra app bar buttons of this role, shown before the account button (e.g. the student's bell).
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +43,7 @@ class RoleShell extends StatelessWidget {
       appBar: HvpAppBar(
         title: current.label,
         actions: <Widget>[
+          ...actions,
           if (accountInAppBar)
             IconButton(
               tooltip: 'Tài khoản',
