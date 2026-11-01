@@ -12,6 +12,7 @@ import '../../features/courses/presentation/course_detail_screen.dart';
 import '../../features/courses/presentation/courses_screen.dart';
 import '../../features/courses/presentation/lesson_detail_screen.dart';
 import '../../features/fighter_record/presentation/screens/fighter_record_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart';
 import '../route_paths.dart';
 import '../shell/profile_tab.dart';
 import '../shell/shell_tab.dart';
@@ -51,6 +52,12 @@ List<RouteBase> studentRoutes() => <RouteBase>[
                     icon: HvpIcons.book,
                     small: true,
                     onPressed: () => context.push(StudentPaths.courses),
+                  ),
+                  HvpButton.gold(
+                    label: 'Thông báo',
+                    icon: HvpIcons.bell,
+                    small: true,
+                    onPressed: () => context.push(StudentPaths.notifications),
                   ),
                 ],
               ),
@@ -119,12 +126,7 @@ List<RouteBase> studentRoutes() => <RouteBase>[
       ),
       GoRoute(
         path: StudentPaths.notifications,
-        builder: (context, state) => const ComingSoonPage(
-          title: 'Thông báo',
-          owner: 'feature: notifications',
-          icon: HvpIcons.bell,
-          standalone: true,
-        ),
+        builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
         path: StudentPaths.membership,
