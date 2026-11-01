@@ -11,12 +11,12 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/hvp_app_bar.dart';
 import '../../../core/widgets/hvp_button.dart';
 import '../../../core/widgets/hvp_card.dart';
-import '../../../core/widgets/inline_banner.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../domain/checkin_outcome.dart';
+import '../domain/checkin_failure.dart';
 import '../domain/checkin_session.dart';
 import 'checkin_providers.dart';
 import 'checkin_scan_controller.dart';
+import 'widgets/checkin_result_view.dart';
 import 'widgets/manual_code_sheet.dart';
 
 /// The member points the camera at the QR on the front-desk screen; the server checks it in.
@@ -79,16 +79,20 @@ class CheckinScanScreen extends ConsumerWidget {
           if (state is ScanSubmitting) const _Busy(),
           if (state is ScanChoosing) _ChooseSessionPanel(state: state, onPick: controller.choose, onCancel: controller.scanAgain),
           if (state is ScanFailed)
-            _FailurePanel(
-              state: state,
-              controller: controller,
-              onLeave: () => _leave(context),
-              onEnterAgain: () {
-                controller.scanAgain();
-                _enterCode(context, ref);
-              },
+            Positioned.fill(
+              child: CheckinFailureView(
+                failure: CheckinFailure.from(state.error),
+                typed: state.code.isTyped,
+                onScanAgain: () {
+                  controller.scanAgain();
+                  if (state.code.isTyped) _enterCode(context, ref);
+                },
+                onRetry: controller.retry,
+                onRenew: () => context.push(StudentPaths.membership),
+                onBack: () => _leave(context),
+              ),
             ),
-          if (state is ScanDone) _SuccessPanel(result: state.result, onDone: () => _leave(context)),
+          if (state is ScanDone) Positioned.fill(child: CheckinSuccessView(result: state.result, onDone: () => _leave(context))),
         ],
       ),
     );
@@ -206,101 +210,6 @@ class _ChooseSessionPanel extends StatelessWidget {
           const SizedBox(height: 4),
           SizedBox(width: double.infinity, child: HvpButton.secondary(label: 'Hủy', onPressed: onCancel, small: true)),
         ],
-      ),
-    );
-  }
-}
-
-class _FailurePanel extends StatelessWidget {
-  const _FailurePanel({required this.state, required this.controller, required this.onLeave, required this.onEnterAgain});
-
-  final ScanFailed state;
-  final CheckinScanController controller;
-  final VoidCallback onLeave;
-
-  /// Reopens the typed-code form after a refused typed code.
-  final VoidCallback onEnterAgain;
-
-  @override
-  Widget build(BuildContext context) {
-    final action = state.action;
-    final bool retryable = state.error.isNetwork;
-    final String label;
-    final VoidCallback onPressed;
-    if (retryable) {
-      label = 'Thử lại';
-      onPressed = controller.retry;
-    } else if (action == CheckinAction.rescan) {
-      label = state.code.isTyped ? 'Nhập lại' : 'Quét lại';
-      onPressed = state.code.isTyped ? onEnterAgain : controller.scanAgain;
-    } else {
-      label = 'Quay lại';
-      onPressed = onLeave;
-    }
-    return _BottomPanel(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          InlineBanner(title: 'Chưa check-in được', message: state.error.message),
-          const SizedBox(height: 12),
-          HvpButton.gold(label: label, onPressed: onPressed),
-        ],
-      ),
-    );
-  }
-}
-
-class _SuccessPanel extends StatelessWidget {
-  const _SuccessPanel({required this.result, required this.onDone});
-
-  final CheckedIn result;
-  final VoidCallback onDone;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.hvp;
-    final t = context.txt;
-    return ColoredBox(
-      color: Colors.black.fade(0.7),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: HvpCard(
-            highlighted: true,
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Icon(HvpIcons.checkCircle, size: 56, color: c.emerald),
-                const SizedBox(height: 12),
-                Text(
-                  result.alreadyCheckedIn ? 'ĐÃ CHECK-IN RỒI' : 'CHECK-IN THÀNH CÔNG',
-                  style: t.titleL,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(result.sessionTitle, style: t.titleS, textAlign: TextAlign.center),
-                Text(
-                  '${formatTime(result.startsAt)} - ${formatTime(result.endsAt)} · ${result.branchName}',
-                  style: t.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text('Check-in lúc ${formatTime(result.checkedInAt)}', style: t.caption, textAlign: TextAlign.center),
-                if (result.sessionsRemaining != null) ...<Widget>[
-                  const SizedBox(height: 8),
-                  Text('Gói tập còn ${result.sessionsRemaining} buổi', style: t.body, textAlign: TextAlign.center),
-                ],
-                const SizedBox(height: 12),
-                Text(result.message, style: t.bodySmall, textAlign: TextAlign.center),
-                const SizedBox(height: 20),
-                HvpButton.gold(label: 'Xong', onPressed: onDone),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

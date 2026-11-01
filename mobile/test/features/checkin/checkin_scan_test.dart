@@ -55,8 +55,9 @@ CheckinSession _open(String id, String title, int hour) => CheckinSession(
       closesAt: DateTime.utc(2026, 11, 2, hour + 1),
     );
 
-ApiException _refusal(String code, String message, String action, {int status = 422}) =>
-    ApiException(code: code, message: message, statusCode: status, details: <String, dynamic>{'action': action});
+ApiException _refusal(String code, String message, String action,
+        {int status = 422, Map<String, dynamic> extra = const <String, dynamic>{}}) =>
+    ApiException(code: code, message: message, statusCode: status, details: <String, dynamic>{'action': action, ...extra});
 
 class FakeCheckin implements CheckinRepository {
   /// Answers of successive `submit` calls: an outcome, an exception, or a future.
@@ -118,6 +119,7 @@ Future<GoRouter> _pumpScan(WidgetTester tester, FakeCheckin repo, {String? sessi
       path: StudentPaths.checkinScan,
       builder: (_, state) => CheckinScanScreen(sessionId: state.uri.queryParameters['sessionId']),
     ),
+    GoRoute(path: StudentPaths.membership, builder: (_, __) => const Scaffold(body: Center(child: Text('MEMBERSHIP')))),
   ]);
   addTearDown(router.dispose);
   await tester.pumpWidget(ProviderScope(
@@ -230,7 +232,7 @@ void main() {
     expect(repo.calls, <({String? payload, String? sessionId})>[(payload: _payload, sessionId: 's1')]);
     expect(find.text('CHECK-IN THÀNH CÔNG'), findsOneWidget);
     expect(find.text('Evening class'), findsOneWidget);
-    expect(find.text('Gói tập còn 31 buổi'), findsOneWidget);
+    expect(find.text('GÓI TẬP CÒN 31 BUỔI'), findsOneWidget);
     expect(find.text('Buổi tập đang chờ Coach xác nhận.'), findsOneWidget);
   });
 
@@ -249,7 +251,7 @@ void main() {
     await _pumpScan(tester, repo);
     await _read(tester);
     expect(find.text('ĐÃ CHECK-IN RỒI'), findsOneWidget);
-    expect(find.textContaining('Gói tập còn'), findsNothing);
+    expect(find.textContaining('GÓI TẬP CÒN'), findsNothing);
   });
 
   testWidgets('asks which session when several are open and sends the same code with the one picked', (tester) async {
@@ -451,6 +453,90 @@ void main() {
       }
       expect(repo.calls, isEmpty);
       expect(container.read(checkinScanProvider), isA<ScanIdle>());
+    });
+  });
+
+  group('CHK-09 result screens', () {
+    Future<void> refused(WidgetTester tester, ApiException error) async {
+      final repo = FakeCheckin()..answers.add(error);
+      await _pumpScan(tester, repo);
+      await _read(tester);
+    }
+
+    testWidgets('a successful check-in shows the session, the time and the sessions left', (tester) async {
+      final repo = FakeCheckin()..answers.add(_checkedIn());
+      await _pumpScan(tester, repo);
+      await _read(tester);
+      expect(find.text('CHECK-IN THÀNH CÔNG'), findsOneWidget);
+      expect(find.text('Evening class'), findsOneWidget);
+      expect(find.text('18:00 - 19:00 · HVP The Corner'), findsOneWidget);
+      expect(find.text('Check-in lúc 17:50'), findsOneWidget);
+      expect(find.text('GÓI TẬP CÒN 31 BUỔI'), findsOneWidget);
+      expect(find.text('XONG'), findsOneWidget);
+    });
+
+    testWidgets('an expired code says so and offers to scan again or go back', (tester) async {
+      await refused(tester, _refusal('CHECKIN_CODE_EXPIRED', 'Mã QR đã hết hạn, vui lòng quét lại.', 'RESCAN'));
+      expect(find.text('MÃ ĐÃ HẾT HẠN'), findsOneWidget);
+      expect(find.text('Mã QR đã hết hạn, vui lòng quét lại.'), findsOneWidget);
+      expect(find.text('QUÉT LẠI'), findsOneWidget);
+      expect(find.text('QUAY LẠI'), findsOneWidget);
+    });
+
+    testWidgets('too early: tells when check-in opens, in Vietnam time', (tester) async {
+      await refused(
+        tester,
+        _refusal('NOT_YET_OPEN', 'Chưa đến giờ check-in của buổi này.', 'WAIT', extra: <String, dynamic>{'opensAt': '2026-11-02T10:45:00.000Z'}),
+      );
+      expect(find.text('CHƯA ĐẾN GIỜ CHECK-IN'), findsOneWidget);
+      expect(find.text('Check-in mở lúc 17:45.'), findsOneWidget);
+      expect(find.text('QUAY LẠI'), findsOneWidget);
+      expect(find.text('QUÉT LẠI'), findsNothing);
+    });
+
+    testWidgets('too late: suggests the front desk', (tester) async {
+      await refused(tester, _refusal('CHECKIN_CLOSED', 'Đã hết giờ check-in. Vui lòng nhờ lễ tân check-in hộ.', 'ASK_FRONT_DESK'));
+      expect(find.text('ĐÃ HẾT GIỜ CHECK-IN'), findsOneWidget);
+      expect(find.text('Bạn có thể nhờ lễ tân tại quầy check-in hộ.'), findsOneWidget);
+    });
+
+    testWidgets('wrong branch: names where the session is', (tester) async {
+      await refused(
+        tester,
+        _refusal(
+          'CHECKIN_WRONG_BRANCH',
+          'Buổi tập của bạn diễn ra tại HVP Boxing - Riverside. Vui lòng quét mã tại chi nhánh đó.',
+          'GO_TO_BRANCH',
+          extra: <String, dynamic>{
+            'branches': <dynamic>[
+              <String, dynamic>{'id': 'q7', 'name': 'HVP Boxing - Riverside'},
+            ],
+          },
+        ),
+      );
+      expect(find.text('SAI CHI NHÁNH'), findsOneWidget);
+      expect(find.text('HVP BOXING - RIVERSIDE'), findsOneWidget); // the chip, upper-cased
+    });
+
+    testWidgets('a package that is over leads to renewing it', (tester) async {
+      await refused(tester, _refusal('MEMBERSHIP_INVALID', 'Gói tập của bạn đã hết hạn hoặc hết số buổi. Vui lòng gia hạn để tiếp tục.', 'RENEW_PACKAGE'));
+      expect(find.text('GÓI TẬP KHÔNG HỢP LỆ'), findsOneWidget);
+      await tester.tap(find.text('GIA HẠN GÓI TẬP'));
+      await tester.pumpAndSettle();
+      expect(find.text('MEMBERSHIP'), findsOneWidget);
+    });
+
+    testWidgets('a lost connection is told apart from a bad code', (tester) async {
+      await refused(tester, const ApiException(code: ApiErrorCodes.network, message: 'Không có kết nối mạng.'));
+      expect(find.text('MẤT KẾT NỐI'), findsOneWidget);
+      expect(find.text('THỬ LẠI'), findsOneWidget);
+    });
+
+    testWidgets('an error it does not know still gets a plain result with a way back', (tester) async {
+      await refused(tester, const ApiException(code: 'SOMETHING_NEW', message: 'Có lỗi khác.', statusCode: 500));
+      expect(find.text('CHƯA CHECK-IN ĐƯỢC'), findsOneWidget);
+      expect(find.text('Có lỗi khác.'), findsOneWidget);
+      expect(find.text('QUAY LẠI'), findsOneWidget);
     });
   });
 }
