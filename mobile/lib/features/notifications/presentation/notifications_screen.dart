@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/design/color_utils.dart';
 import '../../../core/design/hvp_context.dart';
@@ -15,6 +16,7 @@ import '../../../core/widgets/hvp_refresh.dart';
 import '../../../core/widgets/hvp_toast.dart';
 import '../domain/app_notification.dart';
 import 'notification_providers.dart';
+import 'notification_target.dart';
 
 /// The learner's inbox: newest first, unread ones stand out, tapping one reads it.
 class NotificationsScreen extends ConsumerWidget {
@@ -75,8 +77,18 @@ class NotificationsScreen extends ConsumerWidget {
                       child: _NotificationTile(
                         item: item,
                         onTap: () async {
-                          if (!await notifier.markRead(item.id) && context.mounted) {
+                          final marked = await notifier.markRead(item.id);
+                          if (!context.mounted) return;
+                          if (!marked) {
                             HvpToast.show(context, 'Không đánh dấu đã đọc được. Vui lòng thử lại.', type: ToastType.error);
+                          }
+                          // The learner came for the screen: go there even when marking it read failed.
+                          final target = notificationTarget(item.eventType);
+                          if (target == null) return;
+                          if (target.isTab) {
+                            context.go(target.path);
+                          } else {
+                            await context.push<void>(target.path);
                           }
                         },
                       ),

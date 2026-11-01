@@ -16,13 +16,14 @@ import 'package:hvp_forging/features/auth/presentation/providers/auth_controller
 import 'package:hvp_forging/features/notifications/data/notification_repository_impl.dart';
 import 'package:hvp_forging/features/notifications/domain/app_notification.dart';
 import 'package:hvp_forging/features/notifications/presentation/notification_providers.dart';
+import 'package:hvp_forging/features/notifications/presentation/notification_target.dart';
 import 'package:hvp_forging/features/notifications/presentation/notifications_screen.dart';
 import 'package:hvp_forging/features/notifications/presentation/widgets/notification_bell.dart';
 
 import '../../helpers/scripted_adapter.dart';
 import '../../helpers/test_harness.dart';
 
-AppNotification _n(String id, {bool read = false, String event = 'RANK_EARNED', String? title}) => AppNotification(
+AppNotification _n(String id, {bool read = false, String event = 'BROADCAST', String? title}) => AppNotification(
       id: id,
       eventType: event,
       title: title ?? 'Thông báo $id',
@@ -219,6 +220,101 @@ void main() {
     await _pump(tester, FakeNotifications(<List<AppNotification>>[<AppNotification>[]]));
     expect(find.text('CHƯA CÓ THÔNG BÁO'), findsOneWidget);
     expect(find.text('Đọc tất cả'), findsNothing);
+  });
+
+  group('NTF-04 opening a notification', () {
+    test('maps each event to the screen it is about, and leaves the generic ones without a target', () {
+      NotificationTarget? t(String e) => notificationTarget(e);
+      expect(t('RANK_EARNED')?.path, StudentPaths.fighterRecord);
+      expect(t('RANK_TRIAL_FAILED')?.path, StudentPaths.fighterRecord);
+      expect(t('SESSION_COMPLETED')?.path, StudentPaths.fighterRecord);
+      expect(t('STREAK_WARNING')?.path, StudentPaths.streak);
+      expect(t('INACTIVE_7D')?.path, StudentPaths.streak);
+      expect(t('CHALLENGE')?.path, StudentPaths.challenges);
+      expect(t('RENEWAL_COMPLETED')?.path, StudentPaths.membership);
+      expect(t('MEMBERSHIP_EXPIRE')?.path, StudentPaths.membership);
+      expect(t('BOOK_COMPLETED')?.path, StudentPaths.courses);
+      expect(t('ARMORY_READY')?.path, StudentPaths.armory);
+      expect(t('ARMORY_READY')?.isTab, isTrue);
+      expect(t('EXAM')?.path, StudentPaths.schedule);
+      expect(t('RANK_EARNED')?.isTab, isFalse);
+      expect(t('WELCOME'), isNull);
+      expect(t('BROADCAST'), isNull);
+      expect(t('SOMETHING_NEW'), isNull);
+    });
+
+    Future<GoRouter> pumpInbox(WidgetTester tester, FakeNotifications repo) async {
+      HvpFonts.useGoogleFonts = false;
+      hvpEntranceEnabled = false;
+      usePhoneSurface(tester);
+      Widget page(String text) => Scaffold(appBar: AppBar(), body: Text(text));
+      final router = GoRouter(initialLocation: StudentPaths.notifications, routes: <RouteBase>[
+        GoRoute(path: StudentPaths.notifications, builder: (_, __) => const NotificationsScreen()),
+        GoRoute(path: StudentPaths.fighterRecord, builder: (_, __) => page('FIGHTER RECORD')),
+        GoRoute(path: StudentPaths.armory, builder: (_, __) => page('ARMORY')),
+      ]);
+      addTearDown(router.dispose);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          currentUserIdProvider.overrideWithValue('member'),
+          notificationRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: MaterialApp.router(theme: HvpTheme.light(), darkTheme: HvpTheme.dark(), themeMode: ThemeMode.dark, routerConfig: router),
+      ));
+      await tester.pumpAndSettle();
+      return router;
+    }
+
+    testWidgets('reads the notification and opens its screen, and back returns to the inbox', (tester) async {
+      final repo = FakeNotifications(<List<AppNotification>>[
+        <AppNotification>[_n('1', event: 'RANK_EARNED')],
+      ], unread: 1);
+      await pumpInbox(tester, repo);
+      await tester.tap(find.text('Thông báo 1'));
+      await tester.pumpAndSettle();
+      expect(repo.reads, <String>['1']);
+      expect(find.text('FIGHTER RECORD'), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('Thông báo 1'), findsOneWidget);
+      expect(_dots(tester), 0);
+    });
+
+    testWidgets('opens a tab destination with go', (tester) async {
+      final repo = FakeNotifications(<List<AppNotification>>[
+        <AppNotification>[_n('1', event: 'ARMORY_READY')],
+      ], unread: 1);
+      final router = await pumpInbox(tester, repo);
+      await tester.tap(find.text('Thông báo 1'));
+      await tester.pumpAndSettle();
+      expect(find.text('ARMORY'), findsOneWidget);
+      expect(router.routerDelegate.currentConfiguration.uri.path, StudentPaths.armory);
+    });
+
+    testWidgets('stays on the inbox for a notification with no screen', (tester) async {
+      final repo = FakeNotifications(<List<AppNotification>>[
+        <AppNotification>[_n('1', event: 'BROADCAST')],
+      ], unread: 1);
+      await pumpInbox(tester, repo);
+      await tester.tap(find.text('Thông báo 1'));
+      await tester.pumpAndSettle();
+      expect(repo.reads, <String>['1']);
+      expect(find.text('Thông báo 1'), findsOneWidget);
+    });
+
+    testWidgets('still opens the screen when marking it read fails, and says so', (tester) async {
+      final repo = FakeNotifications(<List<AppNotification>>[
+        <AppNotification>[_n('1', event: 'RANK_EARNED')],
+      ], unread: 1)
+        ..failWrites = true;
+      await pumpInbox(tester, repo);
+      await tester.tap(find.text('Thông báo 1'));
+      await tester.pumpAndSettle();
+      expect(find.text('FIGHTER RECORD'), findsOneWidget);
+      expect(find.text('Không đánh dấu đã đọc được. Vui lòng thử lại.'), findsOneWidget);
+      await tester.pumpAndSettle(const Duration(seconds: 4)); // let the toast go
+    });
   });
 
   group('NTF-03 bell', () {
