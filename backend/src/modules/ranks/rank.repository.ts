@@ -124,6 +124,8 @@ export class RankRepository {
     trialId?: string | null;
     approvedBy?: string | null;
     snapshot?: RankChangeSnapshot | null;
+    /** Defaults to now; the data sync back-dates rows. */
+    earnedAt?: Date;
   }): Promise<number> {
     return sql.exec(
       `INSERT INTO member_rank_history
@@ -141,7 +143,7 @@ export class RankRepository {
         input.dpAtChange,
         input.approvedBy ?? null,
         input.isRevoked ?? false,
-        clock.now(),
+        input.earnedAt ?? clock.now(),
         input.snapshot ? JSON.stringify(input.snapshot) : null,
       ],
     );
