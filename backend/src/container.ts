@@ -65,6 +65,9 @@ import { checkinRoutes } from './modules/checkin/checkin.routes';
 import { CheckinCodeService } from './modules/checkin/checkin-code.service';
 import { CheckinSessionService } from './modules/checkin/checkin-session.service';
 import { CheckinService } from './modules/checkin/checkin.service';
+import { LeaderboardRepository } from './modules/leaderboard/leaderboard.repository';
+import { leaderboardRoutes } from './modules/leaderboard/leaderboard.routes';
+import { LeaderboardService } from './modules/leaderboard/leaderboard.service';
 // [imports:feature-modules] (one line per module, keep alphabetical)
 
 /** Everything the HTTP layer and the scheduled jobs need, wired once at startup. */
@@ -91,6 +94,7 @@ export interface Container {
     checkinCodes: CheckinCodeService;
     checkinSessions: CheckinSessionService;
     checkin: CheckinService;
+    leaderboard: LeaderboardService;
     // [services:feature-modules] (declare as `name: Type;` and assign in the module block below)
   };
   storage: StorageService;
@@ -192,6 +196,8 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   services.checkinSessions = checkinSessions;
   const checkin = new CheckinService(checkinRepository, checkinCodes, checkinSessions, audit);
   services.checkin = checkin;
+  const leaderboard = new LeaderboardService(new LeaderboardRepository());
+  services.leaderboard = leaderboard;
   // [modules:feature-modules]
 
   // ---- routers ----
@@ -216,6 +222,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     scheduleRoutes(schedule),
     courseRoutes(courses),
     checkinRoutes(checkinCodes, checkinSessions, checkin),
+    leaderboardRoutes(leaderboard),
     // [routers:feature-modules]
   ];
 

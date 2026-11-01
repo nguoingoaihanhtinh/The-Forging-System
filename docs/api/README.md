@@ -30,6 +30,7 @@ Tài liệu theo từng tính năng để FE dựng màn hình mà không cần 
 - [`branches.md`](branches.md): chi nhánh (danh sách, chi tiết, quản trị, QR check-in)
 - [`checkin.md`](checkin.md): check-in (mã xoay vòng, buổi hôm nay, học viên tự check-in, lễ tân check-in hộ, bộ mã lỗi)
 - `classes.md`: lớp học
+- [`leaderboard.md`](leaderboard.md): bảng xếp hạng DP theo năm (đồng hạng, học viên đang hoạt động, đảo giao dịch)
 - `memberships.md`: gói tập
 - [`schedule.md`](schedule.md): lịch học viên tuần/tháng, chi tiết buổi
 - `profile.md`: hồ sơ cá nhân
