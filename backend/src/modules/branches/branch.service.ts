@@ -89,7 +89,7 @@ export class BranchService {
     return after;
   }
 
-  /** Printable QR content for reception / print (rotating time-window codes are CHK-01). */
+  /** Static, printable QR content. The rotating code members scan is served by GET /branches/:id/checkin-code (CHK-01). */
   async getQr(id: string): Promise<{ branchId: string; code: string; qrVersion: string; payload: string }> {
     const b = await this.repo.findById(id);
     if (!b) throw notFound('Chi nhánh');
