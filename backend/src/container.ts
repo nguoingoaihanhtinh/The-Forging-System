@@ -5,6 +5,12 @@ import { ArmoryService } from './modules/armory/armory.service';
 import { RedemptionRepository } from './modules/armory/redemption.repository';
 import { redemptionRoutes } from './modules/armory/redemption.routes';
 import { RedemptionService } from './modules/armory/redemption.service';
+import { AdminArmoryRepository } from './modules/armory/admin-armory.repository';
+import { adminArmoryRoutes } from './modules/armory/admin-armory.routes';
+import { AdminArmoryService } from './modules/armory/admin-armory.service';
+import { InventoryRepository } from './modules/armory/inventory.repository';
+import { inventoryRoutes } from './modules/armory/inventory.routes';
+import { InventoryService } from './modules/armory/inventory.service';
 import { AuditService } from './modules/audit/audit.service';
 import { auditRoutes } from './modules/audit/audit.routes';
 import { AuthController } from './modules/auth/auth.controller';
@@ -95,6 +101,8 @@ export interface Container {
     checkinSessions: CheckinSessionService;
     checkin: CheckinService;
     leaderboard: LeaderboardService;
+    adminArmory: AdminArmoryService;
+    inventory: InventoryService;
     // [services:feature-modules] (declare as `name: Type;` and assign in the module block below)
   };
   storage: StorageService;
@@ -145,6 +153,8 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   const armory = new ArmoryService(new ArmoryRepository());
   const redemptions = new RedemptionService(new RedemptionRepository(), audit, points);
   const challenges = new ChallengeService(new ChallengeRepository(), audit);
+  const adminArmory = new AdminArmoryService(new AdminArmoryRepository(), audit);
+  const inventory = new InventoryService(new InventoryRepository(), audit);
 
   const services = {
     audit,
@@ -159,6 +169,8 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     armory,
     redemptions,
     challenges,
+    adminArmory,
+    inventory,
   } as Container['services'];
 
   // ---- 4. feature modules ----
@@ -209,6 +221,8 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     armoryRoutes(armory),
     redemptionRoutes(redemptions),
     challengeRoutes(challenges),
+    adminArmoryRoutes(adminArmory),
+    inventoryRoutes(inventory),
     rankRoutes(ranks, directory),
     pointsRoutes(points),
     notificationRoutes(notifications),
