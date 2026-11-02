@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/route_paths.dart';
 import '../../../core/design/hvp_context.dart';
 import '../../../core/design/hvp_icons.dart';
 import '../../../core/widgets/async_body.dart';
@@ -37,7 +39,16 @@ class _ArmoryCatalogScreenState extends ConsumerState<ArmoryCatalogScreen> {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('THE ARMORY', style: context.txt.titleL),
+                    Row(children: <Widget>[
+                      Expanded(
+                          child: Text('THE ARMORY', style: context.txt.titleL)),
+                      IconButton(
+                        tooltip: 'Lịch sử đổi quà',
+                        onPressed: () =>
+                            context.push(StudentPaths.armoryRedemptions),
+                        icon: const Icon(HvpIcons.history),
+                      ),
+                    ]),
                     const SizedBox(height: 4),
                     Text('Phần quà dành cho hành trình của bạn',
                         style: context.txt.bodySmall),

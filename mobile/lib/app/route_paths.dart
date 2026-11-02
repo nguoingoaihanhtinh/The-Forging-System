@@ -33,14 +33,20 @@ abstract final class StudentPaths {
   static const String schedule = '/student/schedule';
   static const String checkin = '/student/checkin';
   static const String armory = '/student/armory';
+  static const String armoryRedemptions = '/student/armory/redemptions';
+  static const String armoryRedemptionPattern =
+      '/student/armory/redemptions/:redemptionId';
+  static String armoryRedemption(String id) =>
+      '/student/armory/redemptions/$id';
   static const String profile = '/student/profile';
 
   // Pushed screens
   static const String checkinScan = '/student/checkin/scan';
 
   /// The scanner, optionally told which session the learner picked (`?sessionId=`).
-  static String checkinScanFor(String? sessionId) =>
-      sessionId == null ? checkinScan : '$checkinScan?sessionId=${Uri.encodeQueryComponent(sessionId)}';
+  static String checkinScanFor(String? sessionId) => sessionId == null
+      ? checkinScan
+      : '$checkinScan?sessionId=${Uri.encodeQueryComponent(sessionId)}';
   static const String fighterRecord = '/student/fighter-record';
   static const String streak = '/student/streak';
   static const String challenges = '/student/challenges';
@@ -50,8 +56,10 @@ abstract final class StudentPaths {
   static const String courses = '/student/courses';
   static const String coursePattern = '/student/courses/:courseId';
   static String course(String id) => '/student/courses/$id';
-  static const String courseLessonPattern = '/student/courses/:courseId/lessons/:lessonNo';
-  static String courseLesson(String courseId, int lessonNo) => '/student/courses/$courseId/lessons/$lessonNo';
+  static const String courseLessonPattern =
+      '/student/courses/:courseId/lessons/:lessonNo';
+  static String courseLesson(String courseId, int lessonNo) =>
+      '/student/courses/$courseId/lessons/$lessonNo';
   static const String lessonPattern = '/student/lessons/:id';
   static String lesson(String id) => '/student/lessons/$id';
 }
@@ -69,9 +77,12 @@ abstract final class ReceptionPaths {
 
   // Pushed screens
   static const String branchQr = '/reception/checkin/qr';
-  static const String memberTodayPattern = '/reception/checkin/member/:memberId';
-  static String memberToday(String memberId) => '/reception/checkin/member/$memberId';
-  static const String assistedCheckinPattern = '/reception/checkin/member/:memberId/session/:sessionId';
+  static const String memberTodayPattern =
+      '/reception/checkin/member/:memberId';
+  static String memberToday(String memberId) =>
+      '/reception/checkin/member/$memberId';
+  static const String assistedCheckinPattern =
+      '/reception/checkin/member/:memberId/session/:sessionId';
   static String assistedCheckin(String memberId, String sessionId) =>
       '/reception/checkin/member/$memberId/session/$sessionId';
 
