@@ -6,14 +6,17 @@ import 'package:go_router/go_router.dart';
 import '../../../app/route_paths.dart';
 import '../../../core/design/hvp_context.dart';
 import '../../../core/design/hvp_icons.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/async_body.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/hvp_card.dart';
 import '../../../core/widgets/hvp_bottom_sheet.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../domain/catalog.dart';
+import '../domain/wallet.dart';
 import 'catalog_providers.dart';
 import 'reward_detail.dart';
+import 'wallet_providers.dart';
 
 class ArmoryCatalogScreen extends ConsumerStatefulWidget {
   const ArmoryCatalogScreen({super.key});
@@ -31,6 +34,7 @@ class _ArmoryCatalogScreenState extends ConsumerState<ArmoryCatalogScreen> {
     final tiers = ref.watch(armoryTiersProvider);
     final query = (tierCode: tierCode, page: page);
     final rewards = ref.watch(armoryRewardsProvider(query));
+    final wallet = ref.watch(armoryWalletProvider);
     return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -53,6 +57,8 @@ class _ArmoryCatalogScreenState extends ConsumerState<ArmoryCatalogScreen> {
                     Text('Phần quà dành cho hành trình của bạn',
                         style: context.txt.bodySmall),
                     const SizedBox(height: 12),
+                    _WalletSummary(value: wallet),
+                    const SizedBox(height: 12),
                     AsyncBody<List<ArmoryTier>>(
                         value: tiers,
                         onRetry: () => ref.invalidate(armoryTiersProvider),
@@ -74,7 +80,9 @@ class _ArmoryCatalogScreenState extends ConsumerState<ArmoryCatalogScreen> {
                       onRefresh: () async {
                         ref.invalidate(armoryTiersProvider);
                         ref.invalidate(armoryRewardsProvider(query));
+                        ref.invalidate(armoryWalletProvider);
                         await ref.read(armoryRewardsProvider(query).future);
+                        await ref.read(armoryWalletProvider.future);
                       },
                       child: ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
@@ -126,6 +134,54 @@ class _ArmoryCatalogScreenState extends ConsumerState<ArmoryCatalogScreen> {
           page = 1;
         }),
       ));
+}
+
+class _WalletSummary extends StatelessWidget {
+  const _WalletSummary({required this.value});
+  final AsyncValue<ArmoryWallet> value;
+
+  @override
+  Widget build(BuildContext context) => value.when(
+        loading: () =>
+            const SizedBox(height: 68, child: LinearProgressIndicator()),
+        error: (_, __) => HvpCard(
+          accent: context.hvp.red,
+          child: Row(children: <Widget>[
+            Icon(HvpIcons.warning, color: context.hvp.red),
+            const SizedBox(width: 10),
+            Expanded(
+                child: Text('Không tải được ví Marks.',
+                    style: context.txt.bodySmall)),
+          ]),
+        ),
+        data: (wallet) => HvpCard(
+          highlighted: true,
+          child: Row(children: <Widget>[
+            Icon(HvpIcons.coins, size: 32, color: context.hvp.gold),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text('MARKS KHẢ DỤNG', style: context.txt.caption),
+                    Text('${formatInt(wallet.marksAvailable)} Marks',
+                        style: context.txt.titleM),
+                  ]),
+            ),
+            Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  Text('Đang giữ', style: context.txt.caption),
+                  Text('${formatInt(wallet.marksHeld)} Marks',
+                      style: context.txt.bodySmall),
+                  if (!wallet.canRedeem)
+                    Text('Chưa thể đổi',
+                        style: context.txt.caption
+                            .copyWith(color: context.hvp.red)),
+                ]),
+          ]),
+        ),
+      );
 }
 
 class _RewardCard extends StatelessWidget {
