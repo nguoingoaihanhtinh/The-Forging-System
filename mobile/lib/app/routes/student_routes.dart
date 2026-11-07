@@ -6,6 +6,8 @@ import '../../core/widgets/coming_soon_page.dart';
 import '../../core/widgets/hvp_button.dart';
 import '../../features/auth/domain/auth_user.dart';
 import '../../features/armory/presentation/armory_catalog_screen.dart';
+import '../../features/armory/presentation/redemption_detail_screen.dart';
+import '../../features/armory/presentation/redemption_history_screen.dart';
 import '../../features/checkin/presentation/checkin_scan_screen.dart';
 import '../../features/checkin/presentation/checkin_tab.dart';
 import '../../features/challenges/presentation/current_challenges_screen.dart';
@@ -96,6 +98,16 @@ List<RouteBase> studentRoutes() => <RouteBase>[
         ],
       ),
       // ---- pushed screens (full screen, outside the shell) ----
+      GoRoute(
+        path: StudentPaths.armoryRedemptions,
+        builder: (context, state) => const RedemptionHistoryScreen(),
+      ),
+      GoRoute(
+        path: StudentPaths.armoryRedemptionPattern,
+        builder: (context, state) => RedemptionDetailScreen(
+          redemptionId: state.pathParameters['redemptionId'] ?? '',
+        ),
+      ),
       GoRoute(
         path: StudentPaths.checkinScan,
         builder: (context, state) => CheckinScanScreen(

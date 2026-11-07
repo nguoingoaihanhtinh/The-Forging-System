@@ -33,6 +33,11 @@ abstract final class StudentPaths {
   static const String schedule = '/student/schedule';
   static const String checkin = '/student/checkin';
   static const String armory = '/student/armory';
+  static const String armoryRedemptions = '/student/armory/redemptions';
+  static const String armoryRedemptionPattern =
+      '/student/armory/redemptions/:redemptionId';
+  static String armoryRedemption(String id) =>
+      '/student/armory/redemptions/$id';
   static const String profile = '/student/profile';
 
   // Pushed screens

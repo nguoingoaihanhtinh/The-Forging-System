@@ -1,0 +1,184 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/design/hvp_context.dart';
+import '../../../core/design/hvp_icons.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/async_body.dart';
+import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/hvp_app_bar.dart';
+import '../../../core/widgets/hvp_card.dart';
+import '../../../core/widgets/status_chip.dart';
+import '../domain/redemption.dart';
+import 'redemption_providers.dart';
+
+class RedemptionHistoryScreen extends ConsumerStatefulWidget {
+  const RedemptionHistoryScreen({super.key});
+
+  @override
+  ConsumerState<RedemptionHistoryScreen> createState() =>
+      _RedemptionHistoryScreenState();
+}
+
+class _RedemptionHistoryScreenState
+    extends ConsumerState<RedemptionHistoryScreen> {
+  String? status;
+  int page = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    final query = (status: status, page: page);
+    final history = ref.watch(redemptionHistoryProvider(query));
+    return Scaffold(
+      appBar: const HvpAppBar(title: 'Lịch sử đổi quà'),
+      body: Column(children: <Widget>[
+        SizedBox(
+          height: 56,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            scrollDirection: Axis.horizontal,
+            children: <Widget>[
+              _filterChip(null, 'Tất cả'),
+              _filterChip('PENDING_PICKUP', 'Chờ nhận'),
+              _filterChip('DELIVERED', 'Đã giao'),
+              _filterChip('REJECTED', 'Từ chối'),
+              _filterChip('CANCELLED', 'Đã hủy'),
+              _filterChip('EXPIRED', 'Hết hạn'),
+            ],
+          ),
+        ),
+        Expanded(
+          child: AsyncBody<RedemptionPage>(
+            value: history,
+            onRetry: () => ref.invalidate(redemptionHistoryProvider(query)),
+            builder: (_, result) => RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(redemptionHistoryProvider(query));
+                await ref.read(redemptionHistoryProvider(query).future);
+              },
+              child: result.items.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const <Widget>[
+                        EmptyState(
+                          icon: HvpIcons.history,
+                          title: 'Chưa có yêu cầu đổi quà',
+                          message:
+                              'Các phần quà bạn đã đổi sẽ xuất hiện tại đây.',
+                        ),
+                      ],
+                    )
+                  : ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                      children: <Widget>[
+                        Text('${result.total} yêu cầu',
+                            style: context.txt.caption),
+                        const SizedBox(height: 8),
+                        for (final redemption in result.items)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _RedemptionCard(redemption: redemption),
+                          ),
+                        if (result.totalPages > 1)
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                TextButton(
+                                  onPressed: result.page > 1
+                                      ? () =>
+                                          setState(() => page = result.page - 1)
+                                      : null,
+                                  child: const Text('Trang trước'),
+                                ),
+                                Text(
+                                    'Trang ${result.page}/${result.totalPages}',
+                                    style: context.txt.caption),
+                                TextButton(
+                                  onPressed: result.page < result.totalPages
+                                      ? () =>
+                                          setState(() => page = result.page + 1)
+                                      : null,
+                                  child: const Text('Trang sau'),
+                                ),
+                              ]),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _filterChip(String? value, String label) => Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          label: Text(label),
+          selected: status == value,
+          onSelected: (_) => setState(() {
+            status = value;
+            page = 1;
+          }),
+        ),
+      );
+}
+
+class _RedemptionCard extends StatelessWidget {
+  const _RedemptionCard({required this.redemption});
+  final ArmoryRedemption redemption;
+
+  @override
+  Widget build(BuildContext context) => HvpCard(
+        onTap: () =>
+            context.push('/student/armory/redemptions/${redemption.id}'),
+        child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _image(context),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(redemption.rewardName, style: context.txt.titleS),
+                      const SizedBox(height: 4),
+                      Text(
+                          '#${redemption.code} · ${formatDateTime(redemption.requestedAt)}',
+                          style: context.txt.caption),
+                      const SizedBox(height: 8),
+                      Wrap(spacing: 8, runSpacing: 6, children: <Widget>[
+                        StatusChip(
+                            label: '${formatInt(redemption.marksCost)} Marks',
+                            tone: ChipTone.gold),
+                        _statusChip(redemption.status),
+                      ]),
+                    ]),
+              ),
+              Icon(HvpIcons.caretRight, color: context.hvp.textMuted),
+            ]),
+      );
+
+  Widget _image(BuildContext context) => redemption.rewardImageUrl == null
+      ? Icon(HvpIcons.gift, size: 42, color: context.hvp.gold)
+      : CachedNetworkImage(
+          imageUrl: redemption.rewardImageUrl!,
+          width: 42,
+          height: 42,
+          fit: BoxFit.cover,
+          errorWidget: (_, __, ___) =>
+              Icon(HvpIcons.gift, size: 42, color: context.hvp.gold),
+        );
+}
+
+StatusChip _statusChip(String status) => switch (status) {
+      'PENDING_PICKUP' =>
+        const StatusChip(label: 'Chờ nhận', tone: ChipTone.warning),
+      'DELIVERED' => const StatusChip(label: 'Đã giao', tone: ChipTone.success),
+      'REJECTED' => const StatusChip(label: 'Từ chối', tone: ChipTone.danger),
+      'CANCELLED' => const StatusChip(label: 'Đã hủy', tone: ChipTone.neutral),
+      'EXPIRED' => const StatusChip(label: 'Hết hạn', tone: ChipTone.neutral),
+      _ => StatusChip(label: status, tone: ChipTone.neutral),
+    };

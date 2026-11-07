@@ -6,8 +6,10 @@ import 'package:hvp_forging/core/network/dio_factory.dart';
 import 'package:hvp_forging/core/storage/token_store.dart';
 import 'package:hvp_forging/features/armory/data/catalog_repository.dart';
 import 'package:hvp_forging/features/armory/domain/catalog.dart';
+import 'package:hvp_forging/features/armory/domain/wallet.dart';
 import 'package:hvp_forging/features/armory/presentation/armory_catalog_screen.dart';
 import 'package:hvp_forging/features/armory/presentation/catalog_providers.dart';
+import 'package:hvp_forging/features/armory/presentation/wallet_providers.dart';
 import 'package:hvp_forging/features/auth/presentation/providers/auth_controller.dart';
 import '../../helpers/scripted_adapter.dart';
 import '../../helpers/test_harness.dart';
@@ -35,6 +37,16 @@ class FakeCatalog implements ArmoryCatalogRepository {
               limitPeriod: 'MONTH'),
         ]);
   }
+}
+
+class FakeWallet implements ArmoryWalletRepository {
+  @override
+  Future<ArmoryWallet> wallet() async => const ArmoryWallet(
+        marksBalance: 500,
+        marksHeld: 120,
+        marksAvailable: 380,
+        canRedeem: true,
+      );
 }
 
 void main() {
@@ -85,6 +97,7 @@ void main() {
         overrides: [
           currentUserIdProvider.overrideWithValue('member'),
           armoryCatalogRepositoryProvider.overrideWithValue(repo),
+          armoryWalletRepositoryProvider.overrideWithValue(FakeWallet()),
         ]);
     await tester.pumpAndSettle();
     expect(find.text('Bình nước'), findsOneWidget);
@@ -103,6 +116,7 @@ void main() {
         overrides: [
           currentUserIdProvider.overrideWithValue('member'),
           armoryCatalogRepositoryProvider.overrideWithValue(repo),
+          armoryWalletRepositoryProvider.overrideWithValue(FakeWallet()),
         ]);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Bình nước'));
