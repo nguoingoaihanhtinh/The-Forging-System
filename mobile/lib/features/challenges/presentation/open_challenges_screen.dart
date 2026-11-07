@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/route_paths.dart';
 import '../../../core/design/hvp_context.dart';
 import '../../../core/design/hvp_icons.dart';
 import '../../../core/utils/formatters.dart';
@@ -28,7 +30,16 @@ class _OpenChallengesScreenState extends ConsumerState<OpenChallengesScreen> {
     final query = (type: _type, page: _page);
     final challenges = ref.watch(openChallengesProvider(query));
     return Scaffold(
-      appBar: AppBar(title: const Text('Thử thách')),
+      appBar: AppBar(
+        title: const Text('Thử thách'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Thử thách của tôi',
+            icon: const Icon(HvpIcons.flag),
+            onPressed: () => context.push(StudentPaths.currentChallenges),
+          ),
+        ],
+      ),
       body: Column(
         children: <Widget>[
           Padding(
@@ -116,16 +127,16 @@ class _OpenChallengesScreenState extends ConsumerState<OpenChallengesScreen> {
   }
 
   Widget _filter(String? type, String label) => Padding(
-    padding: const EdgeInsets.only(right: 8),
-    child: ChoiceChip(
-      label: Text(label),
-      selected: _type == type,
-      onSelected: (_) => setState(() {
-        _type = type;
-        _page = 1;
-      }),
-    ),
-  );
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          label: Text(label),
+          selected: _type == type,
+          onSelected: (_) => setState(() {
+            _type = type;
+            _page = 1;
+          }),
+        ),
+      );
 }
 
 class _ChallengeCard extends StatelessWidget {
@@ -134,92 +145,92 @@ class _ChallengeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => HvpCard(
-    semanticLabel: 'Thử thách ${challenge.title}',
-    accent: challenge.participationId == null ? null : context.hvp.emerald,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        semanticLabel: 'Thử thách ${challenge.title}',
+        accent: challenge.participationId == null ? null : context.hvp.emerald,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            StatusChip(
-              label: _typeLabel(challenge.challengeType),
-              tone: ChipTone.gold,
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: <Widget>[
+                StatusChip(
+                  label: _typeLabel(challenge.challengeType),
+                  tone: ChipTone.gold,
+                ),
+                StatusChip(
+                  label: _statusLabel(challenge.participationStatus),
+                  tone: _statusTone(challenge.participationStatus),
+                ),
+              ],
             ),
-            StatusChip(
-              label: _statusLabel(challenge.participationStatus),
-              tone: _statusTone(challenge.participationStatus),
+            const SizedBox(height: 12),
+            Text(challenge.title, style: context.txt.titleS),
+            if (challenge.description?.isNotEmpty == true) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(challenge.description!, style: context.txt.bodySmall),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
+              children: <Widget>[
+                _detail(
+                  context,
+                  HvpIcons.flag,
+                  'Mục tiêu: ${formatInt(challenge.target)}',
+                ),
+                _detail(
+                  context,
+                  HvpIcons.star,
+                  '+${formatInt(challenge.rewardDp)} DP',
+                ),
+                _detail(
+                  context,
+                  HvpIcons.coins,
+                  '+${formatInt(challenge.rewardMarks)} Marks',
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Kết thúc: ${formatDateTime(challenge.endsAt)}',
+              style: context.txt.caption,
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Text(challenge.title, style: context.txt.titleS),
-        if (challenge.description?.isNotEmpty == true) ...<Widget>[
-          const SizedBox(height: 4),
-          Text(challenge.description!, style: context.txt.bodySmall),
-        ],
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 6,
-          children: <Widget>[
-            _detail(
-              context,
-              HvpIcons.flag,
-              'Mục tiêu: ${formatInt(challenge.target)}',
-            ),
-            _detail(
-              context,
-              HvpIcons.star,
-              '+${formatInt(challenge.rewardDp)} DP',
-            ),
-            _detail(
-              context,
-              HvpIcons.coins,
-              '+${formatInt(challenge.rewardMarks)} Marks',
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'Kết thúc: ${formatDateTime(challenge.endsAt)}',
-          style: context.txt.caption,
-        ),
-      ],
-    ),
-  );
+      );
 
   Widget _detail(BuildContext context, IconData icon, String text) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: <Widget>[
-      Icon(icon, size: 16, color: context.hvp.gold),
-      const SizedBox(width: 4),
-      Text(text, style: context.txt.bodySmall),
-    ],
-  );
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(icon, size: 16, color: context.hvp.gold),
+          const SizedBox(width: 4),
+          Text(text, style: context.txt.bodySmall),
+        ],
+      );
 
   String _typeLabel(String value) => switch (value) {
-    'DAILY' => 'Hằng ngày',
-    'WEEKLY' => 'Hằng tuần',
-    'MONTHLY' => 'Hằng tháng',
-    'EVENT' => 'Sự kiện',
-    _ => value,
-  };
+        'DAILY' => 'Hằng ngày',
+        'WEEKLY' => 'Hằng tuần',
+        'MONTHLY' => 'Hằng tháng',
+        'EVENT' => 'Sự kiện',
+        _ => value,
+      };
 
   String _statusLabel(String? value) => switch (value) {
-    'JOINED' => 'Đã tham gia',
-    'AWAITING_COACH' => 'Chờ xác nhận',
-    'REWARDED' => 'Đã nhận thưởng',
-    'EXPIRED' => 'Đã hết hạn',
-    _ => 'Chưa tham gia',
-  };
+        'JOINED' => 'Đã tham gia',
+        'AWAITING_COACH' => 'Chờ xác nhận',
+        'REWARDED' => 'Đã nhận thưởng',
+        'EXPIRED' => 'Đã hết hạn',
+        _ => 'Chưa tham gia',
+      };
 
   ChipTone _statusTone(String? value) => switch (value) {
-    'REWARDED' => ChipTone.success,
-    'AWAITING_COACH' => ChipTone.warning,
-    'EXPIRED' => ChipTone.danger,
-    'JOINED' => ChipTone.info,
-    _ => ChipTone.neutral,
-  };
+        'REWARDED' => ChipTone.success,
+        'AWAITING_COACH' => ChipTone.warning,
+        'EXPIRED' => ChipTone.danger,
+        'JOINED' => ChipTone.info,
+        _ => ChipTone.neutral,
+      };
 }
