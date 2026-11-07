@@ -8,6 +8,7 @@ import '../../features/auth/domain/auth_user.dart';
 import '../../features/armory/presentation/armory_catalog_screen.dart';
 import '../../features/checkin/presentation/checkin_scan_screen.dart';
 import '../../features/checkin/presentation/checkin_tab.dart';
+import '../../features/challenges/presentation/current_challenges_screen.dart';
 import '../../features/courses/presentation/course_detail_screen.dart';
 import '../../features/courses/presentation/courses_screen.dart';
 import '../../features/courses/presentation/lesson_detail_screen.dart';
@@ -96,7 +97,8 @@ List<RouteBase> studentRoutes() => <RouteBase>[
       // ---- pushed screens (full screen, outside the shell) ----
       GoRoute(
         path: StudentPaths.checkinScan,
-        builder: (context, state) => CheckinScanScreen(sessionId: state.uri.queryParameters['sessionId']),
+        builder: (context, state) => CheckinScanScreen(
+            sessionId: state.uri.queryParameters['sessionId']),
       ),
       GoRoute(
         path: StudentPaths.fighterRecord,
@@ -113,12 +115,7 @@ List<RouteBase> studentRoutes() => <RouteBase>[
       ),
       GoRoute(
         path: StudentPaths.challenges,
-        builder: (context, state) => const ComingSoonPage(
-          title: 'Thử thách',
-          owner: 'feature: challenges',
-          icon: HvpIcons.flag,
-          standalone: true,
-        ),
+        builder: (context, state) => const CurrentChallengesScreen(),
       ),
       GoRoute(
         path: StudentPaths.notifications,
@@ -148,7 +145,8 @@ List<RouteBase> studentRoutes() => <RouteBase>[
       ),
       GoRoute(
         path: StudentPaths.coursePattern,
-        builder: (context, state) => CourseDetailScreen(courseId: state.pathParameters['courseId'] ?? ''),
+        builder: (context, state) => CourseDetailScreen(
+            courseId: state.pathParameters['courseId'] ?? ''),
       ),
       GoRoute(
         path: StudentPaths.courseLessonPattern,
