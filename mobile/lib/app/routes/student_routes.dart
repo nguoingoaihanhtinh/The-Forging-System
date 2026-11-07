@@ -10,6 +10,8 @@ import '../../features/armory/presentation/redemption_detail_screen.dart';
 import '../../features/armory/presentation/redemption_history_screen.dart';
 import '../../features/checkin/presentation/checkin_scan_screen.dart';
 import '../../features/checkin/presentation/checkin_tab.dart';
+import '../../features/challenges/presentation/current_challenges_screen.dart';
+import '../../features/challenges/presentation/open_challenges_screen.dart';
 import '../../features/courses/presentation/course_detail_screen.dart';
 import '../../features/courses/presentation/courses_screen.dart';
 import '../../features/courses/presentation/lesson_detail_screen.dart';
@@ -126,12 +128,11 @@ List<RouteBase> studentRoutes() => <RouteBase>[
       ),
       GoRoute(
         path: StudentPaths.challenges,
-        builder: (context, state) => const ComingSoonPage(
-          title: 'Thử thách',
-          owner: 'feature: challenges',
-          icon: HvpIcons.flag,
-          standalone: true,
-        ),
+        builder: (context, state) => const OpenChallengesScreen(),
+      ),
+      GoRoute(
+        path: StudentPaths.currentChallenges,
+        builder: (context, state) => const CurrentChallengesScreen(),
       ),
       GoRoute(
         path: StudentPaths.notifications,

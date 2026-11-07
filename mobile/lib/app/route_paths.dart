@@ -50,6 +50,7 @@ abstract final class StudentPaths {
   static const String fighterRecord = '/student/fighter-record';
   static const String streak = '/student/streak';
   static const String challenges = '/student/challenges';
+  static const String currentChallenges = '/student/challenges/current';
   static const String notifications = '/student/notifications';
   static const String membership = '/student/membership';
   static const String workLog = '/student/work-log';
