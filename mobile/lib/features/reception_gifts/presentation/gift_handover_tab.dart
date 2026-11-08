@@ -25,9 +25,10 @@ class GiftHandoverTab extends ConsumerStatefulWidget {
 class _GiftHandoverTabState extends ConsumerState<GiftHandoverTab> {
   String? _status = 'READY_PICKUP';
   String _query = '';
+  int _page = 1;
 
   ({String? status, String query, int page}) get _filter =>
-      (status: _status, query: _query, page: 1);
+      (status: _status, query: _query, page: _page);
 
   Future<void> _run(
       Future<void> Function(StaffRedemptionRepository repository)
@@ -36,7 +37,9 @@ class _GiftHandoverTabState extends ConsumerState<GiftHandoverTab> {
           () => action(ref.read(staffRedemptionRepositoryProvider)),
         );
     if (!mounted || !success) return;
-    ref.invalidate(staffRedemptionListProvider(_filter));
+    setState(() => _page = 1);
+    ref.invalidate(
+        staffRedemptionListProvider((status: _status, query: _query, page: 1)));
   }
 
   Future<void> _approve(StaffRedemption item) async {
@@ -50,14 +53,15 @@ class _GiftHandoverTabState extends ConsumerState<GiftHandoverTab> {
   }
 
   Future<void> _deliver(StaffRedemption item) async {
-    final confirmed = await showConfirmSheet(
+    final result =
+        await showHvpSheet<({String? reason, String? evidenceUrl})>(
       context,
       title: 'Xác nhận giao quà',
-      message:
-          'Xác nhận đã giao ${item.rewardName} cho ${item.memberFullName}? Marks sẽ được trừ chính thức.',
-      confirmLabel: 'Đã giao quà',
+      builder: (_) => _DeliverySheet(item: item),
     );
-    if (confirmed) await _run((repository) => repository.deliver(item.id));
+    if (result == null) return;
+    await _run((repository) => repository.deliver(item.id,
+        reason: result.reason, evidenceUrl: result.evidenceUrl));
   }
 
   Future<void> _reject(StaffRedemption item) async {
@@ -71,6 +75,11 @@ class _GiftHandoverTabState extends ConsumerState<GiftHandoverTab> {
     }
   }
 
+  void _selectStatus(String? value) => setState(() {
+        _status = value;
+        _page = 1;
+      });
+
   @override
   Widget build(BuildContext context) {
     final results = ref.watch(staffRedemptionListProvider(_filter));
@@ -81,7 +90,10 @@ class _GiftHandoverTabState extends ConsumerState<GiftHandoverTab> {
         child: HvpTextField(
           label: 'Tìm đơn / học viên',
           hint: 'Mã đơn, mã học viên hoặc họ tên',
-          onSubmitted: (value) => setState(() => _query = value.trim()),
+          onSubmitted: (value) => setState(() {
+            _query = value.trim();
+            _page = 1;
+          }),
         ),
       ),
       SizedBox(
@@ -93,6 +105,8 @@ class _GiftHandoverTabState extends ConsumerState<GiftHandoverTab> {
             _filterChip(null, 'Tất cả'),
             _filterChip('READY_PICKUP', 'Sẵn sàng nhận'),
             _filterChip('PENDING_PICKUP', 'Chờ duyệt'),
+            _filterChip('DELIVERED', 'Đã giao'),
+            _filterChip('REJECTED', 'Từ chối'),
           ],
         ),
       ),
@@ -123,17 +137,52 @@ class _GiftHandoverTabState extends ConsumerState<GiftHandoverTab> {
                       ),
                     ],
                   )
-                : ListView.separated(
+                : ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                    itemCount: page.items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, index) => _RedemptionCard(
-                      item: page.items[index],
-                      submitting: action.submitting,
-                      onApprove: () => _approve(page.items[index]),
-                      onDeliver: () => _deliver(page.items[index]),
-                      onReject: () => _reject(page.items[index]),
-                    ),
+                    children: <Widget>[
+                      Text(
+                        '${page.total} đơn · Trang ${page.page}/${page.totalPages}',
+                        style: context.txt.caption,
+                      ),
+                      const SizedBox(height: 8),
+                      for (final item in page.items)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _RedemptionCard(
+                            item: item,
+                            submitting: action.submitting,
+                            onApprove: () => _approve(item),
+                            onDeliver: () => _deliver(item),
+                            onReject: () => _reject(item),
+                          ),
+                        ),
+                      if (page.totalPages > 1)
+                        Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: <Widget>[
+                            TextButton.icon(
+                              onPressed: page.page > 1
+                                  ? () => setState(
+                                      () => _page = page.page - 1)
+                                  : null,
+                              icon: const Icon(HvpIcons.caretLeft),
+                              label: const Text('Trang trước'),
+                            ),
+                            Text('Trang ${page.page}/${page.totalPages}',
+                                style: context.txt.caption),
+                            TextButton.icon(
+                              onPressed: page.page < page.totalPages
+                                  ? () => setState(
+                                      () => _page = page.page + 1)
+                                  : null,
+                              icon: const Icon(HvpIcons.caretRight),
+                              label: const Text('Trang sau'),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
           ),
         ),
@@ -146,7 +195,7 @@ class _GiftHandoverTabState extends ConsumerState<GiftHandoverTab> {
         child: ChoiceChip(
           label: Text(label),
           selected: _status == value,
-          onSelected: (_) => setState(() => _status = value),
+          onSelected: (_) => _selectStatus(value),
         ),
       );
 }
@@ -187,6 +236,10 @@ class _RedemptionCard extends StatelessWidget {
               Text(
                   '${item.pickupBranchName} · ${formatDateTime(item.requestedAt)}',
                   style: context.txt.caption),
+              if (item.reason != null) ...<Widget>[
+                const SizedBox(height: 3),
+                Text(item.reason!, style: context.txt.caption),
+              ],
               const SizedBox(height: 12),
               Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
                 if (item.status == 'PENDING_PICKUP')
@@ -219,6 +272,80 @@ class _RedemptionCard extends StatelessWidget {
         'REJECTED' => const StatusChip(label: 'Từ chối', tone: ChipTone.danger),
         _ => StatusChip(label: status, tone: ChipTone.neutral),
       };
+}
+
+class _DeliverySheet extends ConsumerStatefulWidget {
+  const _DeliverySheet({required this.item});
+
+  final StaffRedemption item;
+
+  @override
+  ConsumerState<_DeliverySheet> createState() => _DeliverySheetState();
+}
+
+class _DeliverySheetState extends ConsumerState<_DeliverySheet> {
+  final _reason = TextEditingController();
+  String? _evidenceUrl;
+  String? _error;
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final reason = _reason.text.trim();
+    if (reason.isNotEmpty && reason.length < 3) {
+      setState(() => _error = 'Lý do cần ít nhất 3 ký tự hoặc để trống.');
+      return;
+    }
+    Navigator.of(context).pop(
+      (reason: reason.isEmpty ? null : reason, evidenceUrl: _evidenceUrl),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.txt;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'Xác nhận đã giao ${widget.item.rewardName} cho '
+            '${widget.item.memberFullName}? Marks sẽ được trừ chính thức.',
+            style: t.body,
+          ),
+          const SizedBox(height: 16),
+          HvpTextField(
+            label: 'Lý do / ghi chú',
+            controller: _reason,
+            hint: 'Không bắt buộc',
+            maxLines: 2,
+            maxLength: 500,
+          ),
+          const SizedBox(height: 16),
+          ref.watch(deliveryPhotoFieldBuilderProvider)(
+            context,
+            (url) => setState(() => _evidenceUrl = url),
+          ),
+          if (_error != null) ...<Widget>[
+            const SizedBox(height: 12),
+            InlineBanner(message: _error!),
+          ],
+          const SizedBox(height: 20),
+          HvpButton.gold(
+            label: 'Xác nhận đã giao',
+            expand: true,
+            onPressed: _submit,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RejectReasonSheet extends StatefulWidget {

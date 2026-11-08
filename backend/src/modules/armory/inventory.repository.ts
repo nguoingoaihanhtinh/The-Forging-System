@@ -9,6 +9,14 @@ export interface InventoryFilter {
   to?: string;
 }
 
+export interface InventoryReward {
+  id: string;
+  sku: string;
+  name: string;
+  stock: number;
+  isActive: boolean;
+}
+
 export class InventoryRepository {
   lockReward(id: string) {
     return sql.one<{ id: string; name: string; stock: number }>(
@@ -23,6 +31,18 @@ export class InventoryRepository {
     return (await sql.one(`INSERT INTO inventory_movements (tenant_id,reward_id,movement_type,quantity,actor_id,reason)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,reward_id,movement_type,quantity,redemption_id,actor_id,reason,created_at`,
     [db.currentTenantId(), input.rewardId, input.movementType, input.quantity, input.actorId, input.reason]))!;
+  }
+
+  async searchRewards(filter: { q?: string }, limit: number, offset: number) {
+    const params = [filter.q ? `%${filter.q.replace(/[\\%_]/g, '\\$&')}%` : null];
+    const where = `($1::text IS NULL OR name ILIKE $1 OR sku ILIKE $1)`;
+    const items = await sql.many<InventoryReward>(
+      `SELECT id,sku,name,stock,is_active FROM rewards WHERE ${where}
+      ORDER BY name,sku,id LIMIT $2 OFFSET $3`,
+      [...params, limit, offset],
+    );
+    const total = await sql.scalar<number>(`SELECT count(*)::int FROM rewards WHERE ${where}`, params);
+    return { items, total: total ?? 0 };
   }
 
   async history(filter: InventoryFilter, limit: number, offset: number) {

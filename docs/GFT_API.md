@@ -164,6 +164,20 @@ POST /staff/armory/inventory/movements
 Response 201 `{data:{movement,stockBefore,stockAfter}}`. Reward được khóa khi tính stock; không xuất âm hoặc vượt int32.
 Thay đổi stock, inventory movement và audit cùng transaction. Không tự tạo/cập nhật đơn redemption hay ledger Marks.
 
+## Danh mục quà cho lễ tân
+
+```http
+GET /staff/armory/rewards?q=gang&page=1&limit=20
+```
+
+Cùng role với API kho (`FRONT_DESK`). Dùng cho màn **Kho quà** khi chọn quà nhập/xuất và khi lọc lịch sử.
+
+- `q` tùy chọn: tìm literal theo tên hoặc SKU (tối đa 100 ký tự), không phân biệt hoa/thường.
+- `page`, `limit` 1–100 (mặc định 20). Response `{data:[...],meta:{page,limit,total,totalPages}}`.
+- Mỗi item gồm `id`, `sku`, `name`, `stock`, `isActive`; sắp xếp theo `name, sku, id`.
+- Trả cả quà `isActive=false` để lễ tân vẫn tra cứu được lịch sử kho của quà đã ngừng bán.
+- Chỉ trả quà của tenant hiện tại. 400 validation, 401/403 token/role.
+
 ## Lịch sử
 
 ```http
@@ -183,9 +197,19 @@ set "REWARD_ID=UUID_PHAN_QUA"
 curl -X POST "http://localhost:4000/api/v1/staff/armory/inventory/movements" -H "Authorization: Bearer %TOKEN%" -H "X-Tenant-Code: hvp" -H "Content-Type: application/json" -d "{\"rewardId\":\"%REWARD_ID%\",\"movementType\":\"IN\",\"quantity\":5,\"reason\":\"Nhap hang\"}"
 curl -X POST "http://localhost:4000/api/v1/staff/armory/inventory/movements" -H "Authorization: Bearer %TOKEN%" -H "X-Tenant-Code: hvp" -H "Content-Type: application/json" -d "{\"rewardId\":\"%REWARD_ID%\",\"movementType\":\"OUT\",\"quantity\":2,\"reason\":\"Xuat kho\"}"
 curl "http://localhost:4000/api/v1/staff/armory/inventory/movements?rewardId=%REWARD_ID%&page=1&limit=20" -H "Authorization: Bearer %TOKEN%" -H "X-Tenant-Code: hvp"
+curl "http://localhost:4000/api/v1/staff/armory/rewards?q=gang&page=1&limit=20" -H "Authorization: Bearer %TOKEN%" -H "X-Tenant-Code: hvp"
 ```
 
 GFT-02 không yêu cầu migration mới. Mỗi POST là một thao tác kho mới; không tự retry nếu chưa biết kết quả request trước.
+
+## Mobile Reception
+
+Tab **Kho quà** (`reception_stock`) có hai phần:
+
+- **Nhập / xuất**: chọn quà qua bottom sheet tìm theo tên/SKU (có phân trang), chọn loại điều chỉnh, nhập số lượng và lý do. Sau khi lưu, tồn kho hiển thị được cập nhật ngay và lịch sử được tải lại.
+- **Lịch sử**: lọc theo `IN`/`OUT` và theo một phần quà, xem lý do, người thực hiện và thời điểm; phân trang bằng nút **Trang trước** / **Trang sau**.
+
+Unit tests backend: `backend/tests/unit/inventory.test.ts`; mobile: `mobile/test/features/reception_stock/inventory_test.dart`.
 
 
 ---
@@ -278,6 +302,11 @@ Chỉ `RECEPTIONIST`, `ADMIN`, `SUPER_ADMIN`.
 ## Mobile Reception
 
 Tab **Giao quà** gọi API list theo trạng thái, cho phép duyệt đơn `PENDING_PICKUP`, giao đơn `READY_PICKUP` và từ chối đơn đang mở. Sau mỗi thao tác, danh sách được tải lại; lý do từ chối là bắt buộc.
+
+- Bộ lọc trạng thái: **Tất cả**, **Sẵn sàng nhận**, **Chờ duyệt**, **Đã giao**, **Từ chối**.
+- Danh sách có ô tìm theo mã đơn / mã học viên / họ tên và phân trang **Trang trước** / **Trang sau**.
+- Bottom sheet giao quà cho phép nhập lý do/ghi chú tùy chọn và gắn **ảnh biên nhận** (upload qua `POST /uploads?purpose=evidence`, gửi URL ở `deliveryEvidenceUrl`).
+- Card đơn hiển thị lý do của đơn đã từ chối/giao để lễ tân đối chiếu.
 
 
 ---
