@@ -8,6 +8,7 @@ import '../../features/branch_admin/presentation/screens/branch_list_screen.dart
 import '../../features/armory_admin/presentation/screens/admin_armory_management_screen.dart';
 import '../../features/armory_admin/presentation/screens/admin_armory_reward_form_screen.dart';
 import '../../features/armory_admin/presentation/screens/admin_armory_tiers_screen.dart';
+import '../../features/reception_memberships/presentation/screens/admin_renewal_requests_screen.dart';
 import '../../features/staff/presentation/screens/staff_directory_screen.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
@@ -83,6 +84,10 @@ List<RouteBase> adminRoutes() => <RouteBase>[
       GoRoute(
         path: AdminPaths.branches,
         builder: (context, state) => const BranchListScreen(),
+      ),
+      GoRoute(
+        path: AdminPaths.renewalRequests,
+        builder: (context, state) => const AdminRenewalRequestsScreen(),
       ),
       GoRoute(
         path: AdminPaths.armory,

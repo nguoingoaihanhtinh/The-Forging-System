@@ -28,7 +28,7 @@ Ký hiệu vai trò: **M** = học viên (MEMBER), **S** = staff (COACH, HEAD_CO
 | GET | `/members/:memberId`, `/members/:memberId/duplicates` | S / FD |
 | POST | `/members` (tạo tài khoản, trả mật khẩu tạm một lần) | FD |
 | POST | `/members/:memberId/status` (ACTIVE/FROZEN/INACTIVE + lý do) | FD (gỡ INACTIVE: chỉ admin) |
-| POST | `/admin/members/merge` (gộp tài khoản trùng) | A |
+| POST | `/admin/members/merge` (gộp tài khoản trùng; giữ nguyên đường dẫn `/admin/...`) | FD |
 
 ## Điểm (`points`)
 | Method | Path | Quyền |
