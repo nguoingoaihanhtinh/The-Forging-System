@@ -54,4 +54,20 @@ void main() {
     expect(desk.calls('POST /renewal-requests/r1/approve').single.data,
         <String, dynamic>{'paymentEvidenceUrl': 'http://x/files/a.jpg'});
   });
+
+  test('MEM-14 cancel calls post the reason to the request and the package',
+      () async {
+    boot(<String, Reply>{
+      'POST /renewal-requests/r1/cancel': (_) =>
+          okEnvelope(<String, dynamic>{'id': 'r1'}),
+      'POST /memberships/ms1/cancel': (_) =>
+          okEnvelope(<String, dynamic>{'membership': <String, dynamic>{}}),
+    });
+    await repo.cancelRenewal('r1', reason: 'Sai gói');
+    await repo.cancelMembership('ms1', reason: 'Học viên xin huỷ');
+    expect(desk.calls('POST /renewal-requests/r1/cancel').single.data,
+        <String, dynamic>{'reason': 'Sai gói'});
+    expect(desk.calls('POST /memberships/ms1/cancel').single.data,
+        <String, dynamic>{'reason': 'Học viên xin huỷ'});
+  });
 }

@@ -8,4 +8,10 @@ abstract interface class ReceptionMembershipsRepository {
 
   /// `POST /renewal-requests/:id/approve`. Returns the message to show.
   Future<String> approveRenewal(String id, {required String evidenceUrl});
+
+  /// `POST /renewal-requests/:id/cancel`
+  Future<void> cancelRenewal(String id, {required String reason});
+
+  /// `POST /memberships/:id/cancel`
+  Future<void> cancelMembership(String id, {required String reason});
 }

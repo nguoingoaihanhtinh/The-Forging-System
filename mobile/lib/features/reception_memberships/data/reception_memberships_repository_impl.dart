@@ -23,4 +23,14 @@ class ReceptionMembershipsRepositoryImpl
   Future<String> approveRenewal(String id,
           {required String evidenceUrl}) async =>
       str((await _api.approveRenewal(id, evidenceUrl)).dataMap, 'message');
+
+  @override
+  Future<void> cancelRenewal(String id, {required String reason}) async {
+    await _api.cancelRenewal(id, reason);
+  }
+
+  @override
+  Future<void> cancelMembership(String id, {required String reason}) async {
+    await _api.cancelMembership(id, reason);
+  }
 }

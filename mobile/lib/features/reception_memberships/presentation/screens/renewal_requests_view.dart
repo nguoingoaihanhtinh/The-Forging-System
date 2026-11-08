@@ -119,6 +119,14 @@ class _RenewalRequestsViewState extends ConsumerState<RenewalRequestsView> {
                                 onPressed: () =>
                                     askApproveRenewal(context, ref, request),
                               ),
+                              const SizedBox(height: 8),
+                              HvpButton.ghost(
+                                label: 'Huỷ yêu cầu',
+                                small: true,
+                                expand: true,
+                                onPressed: () =>
+                                    askCancelRenewal(context, ref, request),
+                              ),
                             ],
                     );
                   },
