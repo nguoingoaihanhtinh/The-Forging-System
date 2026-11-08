@@ -16,8 +16,11 @@ import '../../features/courses/presentation/course_detail_screen.dart';
 import '../../features/courses/presentation/courses_screen.dart';
 import '../../features/courses/presentation/lesson_detail_screen.dart';
 import '../../features/fighter_record/presentation/screens/fighter_record_screen.dart';
+import '../../features/membership/presentation/screens/membership_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/notifications/presentation/widgets/notification_bell.dart';
+import '../../features/schedule/presentation/screens/schedule_tab.dart';
+import '../../features/schedule/presentation/screens/session_detail_screen.dart';
 import '../route_paths.dart';
 import '../shell/profile_tab.dart';
 import '../shell/shell_tab.dart';
@@ -68,11 +71,7 @@ List<RouteBase> studentRoutes() => <RouteBase>[
             label: 'Lịch tập',
             icon: HvpIcons.calendar,
             activeIcon: HvpIcons.calendarFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Lịch tập',
-              owner: 'feature: schedule',
-              icon: HvpIcons.calendar,
-            ),
+            builder: (_) => const ScheduleTab(),
           ),
           ShellTab(
             path: StudentPaths.checkin,
@@ -140,12 +139,7 @@ List<RouteBase> studentRoutes() => <RouteBase>[
       ),
       GoRoute(
         path: StudentPaths.membership,
-        builder: (context, state) => const ComingSoonPage(
-          title: 'Gói tập',
-          owner: 'feature: membership',
-          icon: HvpIcons.ticket,
-          standalone: true,
-        ),
+        builder: (context, state) => const MembershipScreen(),
       ),
       GoRoute(
         path: StudentPaths.workLog,
@@ -155,6 +149,11 @@ List<RouteBase> studentRoutes() => <RouteBase>[
           icon: HvpIcons.list,
           standalone: true,
         ),
+      ),
+      GoRoute(
+        path: StudentPaths.sessionPattern,
+        builder: (context, state) =>
+            SessionDetailScreen(sessionId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: StudentPaths.courses,

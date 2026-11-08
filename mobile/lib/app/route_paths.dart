@@ -54,6 +54,8 @@ abstract final class StudentPaths {
   static const String notifications = '/student/notifications';
   static const String membership = '/student/membership';
   static const String workLog = '/student/work-log';
+  static const String sessionPattern = '/student/sessions/:id';
+  static String session(String id) => '/student/sessions/$id';
   static const String courses = '/student/courses';
   static const String coursePattern = '/student/courses/:courseId';
   static String course(String id) => '/student/courses/$id';
