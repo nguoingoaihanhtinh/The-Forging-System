@@ -9,11 +9,11 @@ workflows:
       cocoapods: default
     scripts:
       - name: Install Flutter packages
-        script: flutter pub get
+        script: cd mobile && flutter pub get
       - name: Analyze Dart code
-        script: flutter analyze
+        script: cd mobile && flutter analyze
       - name: Build iOS without signing
-        script: flutter build ios --release --no-codesign
+        script: cd mobile && flutter build ios --release --no-codesign
     artifacts:
-      - build/ios/iphoneos/*.app
+      - mobile/build/ios/iphoneos/*.app
       - /tmp/xcodebuild_logs/*.log
