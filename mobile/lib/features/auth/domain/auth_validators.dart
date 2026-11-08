@@ -3,7 +3,8 @@ abstract final class AuthValidators {
   static final RegExp _email = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
   /// Keeps digits only (a leading `+` is dropped): `+84 912 345 678` -> `84912345678`.
-  static String digitsOnly(String value) => value.replaceAll(RegExp(r'[^0-9]'), '');
+  static String digitsOnly(String value) =>
+      value.replaceAll(RegExp(r'[^0-9]'), '');
 
   static bool isEmail(String value) => _email.hasMatch(value.trim());
 
@@ -15,7 +16,9 @@ abstract final class AuthValidators {
   static String? identifier(String? value) {
     final v = (value ?? '').trim();
     if (v.isEmpty) return 'Vui lòng nhập email hoặc số điện thoại.';
-    if (v.contains('@')) return isEmail(v) ? null : 'Email chưa đúng định dạng.';
+    if (v.contains('@')) {
+      return isEmail(v) ? null : 'Email chưa đúng định dạng.';
+    }
     return isPhone(v) ? null : 'Số điện thoại chưa hợp lệ.';
   }
 
@@ -37,11 +40,14 @@ abstract final class AuthValidators {
     return isPhone(v) ? null : 'Số điện thoại chưa hợp lệ.';
   }
 
-  static String? optionalEmail(String? value) {
+  static String? email(String? value) {
     final v = (value ?? '').trim();
-    if (v.isEmpty) return null;
+    if (v.isEmpty) return 'Vui lòng nhập email.';
     return isEmail(v) ? null : 'Email chưa đúng định dạng.';
   }
+
+  static String? optionalEmail(String? value) =>
+      (value ?? '').trim().isEmpty ? null : email(value);
 
   /// At least [minLength] characters with letters and digits (mirrors the backend rule).
   static String? newPassword(String? value, {int minLength = 6}) {

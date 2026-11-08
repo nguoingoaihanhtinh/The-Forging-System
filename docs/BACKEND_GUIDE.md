@@ -165,7 +165,7 @@ for (const tenantId of await lookupActiveTenantIds()) {
 - `.env` không commit; secret JWT tối thiểu 32 ký tự.
 - Token truy cập ngắn hạn (15 phút) + refresh token xoay vòng dùng một lần.
 - Upload ảnh (minh chứng, avatar) qua `POST /uploads?purpose=` rồi lưu URL; thay `LocalDiskStorage` bằng S3/MinIO bằng cách implement `StorageService`.
-- Push: `PUSH_PROVIDER=console|fcm` (`fcm` cần `FIREBASE_SERVICE_ACCOUNT_JSON` hoặc `GOOGLE_APPLICATION_CREDENTIALS`, thiếu thì server không khởi động); OTP: `OTP_PROVIDER=console` (cần nhà cung cấp SMS khi lên production).
+- Push: `PUSH_PROVIDER=console|fcm` (`fcm` cần `FIREBASE_SERVICE_ACCOUNT_JSON` hoặc `GOOGLE_APPLICATION_CREDENTIALS`, thiếu thì server không khởi động); OTP qua Zalo + SMS: `OTP_PROVIDER=console|esms` (`esms` dùng API đa kênh của eSMS.vn: gửi Zalo ZNS trước, Zalo thất bại thì eSMS tự gửi SMS CSKH brandname cùng mã. Cần `ESMS_API_KEY`, `ESMS_SECRET_KEY`, `ESMS_BRANDNAME`, `ESMS_ZALO_OA_ID` (OA đã liên kết trong eSMS) và `ESMS_ZALO_TEMPLATE_ID` (template ZNS OTP đã duyệt, 1 tham số `otp`, dùng chung cho đăng ký và quên mật khẩu); nội dung SMS dự phòng trong `otpSmsText` (`src/modules/auth/otp.sender.ts`) phải khớp từng chữ với template SMS đã đăng ký trên eSMS. `ESMS_SANDBOX=true`: eSMS chỉ kiểm tra request, không gửi, không trừ tiền).
 
 ## 8. Swagger UI (tài liệu API tự sinh)
 - Chạy dev rồi mở http://localhost:4000/api/docs (JSON: `/api/docs.json`). Tắt khi `NODE_ENV=production`.

@@ -59,7 +59,7 @@ class ForgotState {
       );
 }
 
-/// Three-step password reset: phone -> PIN -> new password.
+/// Three-step password reset: phone -> SMS PIN -> new password.
 class ForgotPasswordController extends Notifier<ForgotState> {
   @override
   ForgotState build() => const ForgotState();

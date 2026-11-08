@@ -68,6 +68,12 @@ services:
       PUSH_PROVIDER: ${PUSH_PROVIDER:-console}
       FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON:-}
       OTP_PROVIDER: ${OTP_PROVIDER:-console}
+      ESMS_API_KEY: ${ESMS_API_KEY:-}
+      ESMS_SECRET_KEY: ${ESMS_SECRET_KEY:-}
+      ESMS_BRANDNAME: ${ESMS_BRANDNAME:-}
+      ESMS_ZALO_OA_ID: ${ESMS_ZALO_OA_ID:-}
+      ESMS_ZALO_TEMPLATE_ID: ${ESMS_ZALO_TEMPLATE_ID:-}
+      ESMS_SANDBOX: ${ESMS_SANDBOX:-false}
       SEED_DEMO: "false"
     # NOTE: no "ports:" - reached only through Caddy on the internal network.
     expose:
