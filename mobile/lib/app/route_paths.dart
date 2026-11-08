@@ -109,6 +109,7 @@ abstract final class AdminPaths {
   // Pushed screens
   static const String branches = '/admin/settings/branches';
   static const String armory = '/admin/settings/armory';
+  static const String renewalRequests = '/admin/settings/renewal-requests';
   static const String armoryTierCreate = '/admin/settings/armory/tiers/create';
   static const String armoryRewardCreate =
       '/admin/settings/armory/rewards/create';
