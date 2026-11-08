@@ -89,14 +89,14 @@ class ClassDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 HvpButton.secondary(
-                    label: '＋ Buổi kiểm tra',
+                    label: '+ Buổi kiểm tra',
                     expand: true,
                     onPressed: () => showExamSheet(context,
                         classId: classId, className: c.name)),
                 ClassSessionsSection(classId: classId),
                 SectionHeader(title: 'Học viên (${d.roster.length})'),
                 HvpButton.primary(
-                    label: '＋ Thêm học viên vào lớp',
+                    label: '+ Thêm học viên vào lớp',
                     expand: true,
                     onPressed: () => showEnrolSheet(context, classId)),
                 const SizedBox(height: 8),

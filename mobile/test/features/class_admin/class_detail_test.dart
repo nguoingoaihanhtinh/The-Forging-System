@@ -69,7 +69,7 @@ void main() {
 
   testWidgets('enrol: search, Thêm, toast', (tester) async {
     final repo = await show(tester);
-    await tester.tap(find.widgetWithText(HvpButton, '＋ THÊM HỌC VIÊN VÀO LỚP'));
+    await tester.tap(find.widgetWithText(HvpButton, '+ THÊM HỌC VIÊN VÀO LỚP'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Trần');
     await tester.pump(const Duration(milliseconds: 400));
@@ -86,7 +86,7 @@ void main() {
       ..enrolError = const ApiException(
           code: 'CLASS_FULL', message: 'Lớp đã đủ sĩ số', statusCode: 409);
     await show(tester, repo);
-    await tester.tap(find.widgetWithText(HvpButton, '＋ THÊM HỌC VIÊN VÀO LỚP'));
+    await tester.tap(find.widgetWithText(HvpButton, '+ THÊM HỌC VIÊN VÀO LỚP'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Trần');
     await tester.pump(const Duration(milliseconds: 400));
