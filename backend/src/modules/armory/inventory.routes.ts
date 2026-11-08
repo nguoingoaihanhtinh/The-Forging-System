@@ -17,10 +17,20 @@ export const inventoryQuery = paginationQuery.extend({
 }).strict().refine((query) => !query.from || !query.to || new Date(query.from) <= new Date(query.to), {
   path: ['to'], message: 'Thời gian kết thúc phải sau hoặc bằng thời gian bắt đầu.',
 });
+export const inventoryRewardQuery = paginationQuery.extend({
+  q: z.string().trim().min(1).max(100).optional(),
+}).strict();
 
 export function inventoryRoutes(service: InventoryService): Router {
   const r = Router();
   r.use('/staff/armory/inventory', requireAuth, requireRoles(...RoleGroup.FRONT_DESK));
+  r.get('/staff/armory/rewards', requireAuth, requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ query: inventoryRewardQuery }), handle(async (req) => {
+      const query = req.query as unknown as z.infer<typeof inventoryRewardQuery>;
+      const page = toPage(query);
+      const result = await service.rewards(query, page.limit, page.offset);
+      return ok(result.items, pageMeta(page, result.total));
+    }));
   r.post('/staff/armory/inventory/movements', validate({ body: inventoryBody }), handle(async (req) =>
     created(await service.adjust(req.body, authOf(req).userId))));
   r.get('/staff/armory/inventory/movements', validate({ query: inventoryQuery }), handle(async (req) => {

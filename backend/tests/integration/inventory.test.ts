@@ -36,6 +36,21 @@ describe('GFT-02 inventory movements', () => {
     expect(await ctx.tx(() => sql.scalar<number>(`SELECT count(*)::int FROM audit_logs WHERE entity_id=$1 AND action IN ('INVENTORY_IN','INVENTORY_OUT')`, [rewardId]))).toBe(2);
   });
 
+  it('lists rewards for reception with search, pagination and role checks', async () => {
+    const list = await ctx.api.get('/api/v1/staff/armory/rewards').set(bearer(token))
+      .query({ q: 'Test reward', page: 1, limit: 100 });
+    expect(list.status).toBe(200);
+    expect(list.body.meta).toMatchObject({ page: 1, limit: 100 });
+    expect(list.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: rewardId, name: 'Test reward', stock: 10, isActive: true }),
+    ]));
+    expect(list.body.data[0]).not.toHaveProperty('tenantId');
+
+    expect((await ctx.api.get('/api/v1/staff/armory/rewards').set(bearer(token)).query({ limit: 101 })).status).toBe(400);
+    const member = await registerMember(ctx.api);
+    expect((await ctx.api.get('/api/v1/staff/armory/rewards').set(bearer(member.token))).status).toBe(403);
+  });
+
   it('prevents concurrent exports overspending stock', async () => {
     const results = await Promise.all([move('OUT', 7), move('OUT', 7)]);
     expect(results.map((r) => r.status).sort()).toEqual([201, 409]);

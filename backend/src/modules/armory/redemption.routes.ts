@@ -7,15 +7,32 @@ import { validate } from '../../common/middlewares/validate.middleware';
 import { Role, RoleGroup } from '../../shared/roles';
 import type { RedemptionService } from './redemption.service';
 import {
+  approvePickupBody,
   cancelBody,
   createRedemptionBody,
+  deliveryBody,
+  rejectPickupBody,
   decisionBody,
   redemptionHistoryQuery,
   redemptionIdParam,
+  staffRedemptionQuery,
 } from './redemption.validation';
 
 export function redemptionRoutes(service: RedemptionService): Router {
   const r = Router();
+  r.get(
+    '/staff/armory/redemptions',
+    requireAuth,
+    requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ query: staffRedemptionQuery }),
+    handle(async (req) => {
+      const query = req.query as unknown as z.infer<typeof staffRedemptionQuery>;
+      const page = toPage(query);
+      const { page: _page, limit: _limit, ...filter } = query;
+      const result = await service.staffList(filter, page.limit, page.offset, authOf(req));
+      return ok(result.items, pageMeta(page, result.total));
+    }),
+  );
   r.post(
     '/armory/redemptions',
     requireAuth,
@@ -58,6 +75,27 @@ export function redemptionRoutes(service: RedemptionService): Router {
     handle(async (req) =>
       ok(await service.cancel(authOf(req).userId, req.params.redemptionId, req.body.reason)),
     ),
+  );
+  r.post(
+    '/staff/armory/redemptions/:redemptionId/reject',
+    requireAuth,
+    requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ params: redemptionIdParam, body: rejectPickupBody }),
+    handle(async (req) => ok(await service.rejectPickup(req.params.redemptionId, req.body, authOf(req)))),
+  );
+  r.post(
+    '/staff/armory/redemptions/:redemptionId/deliver',
+    requireAuth,
+    requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ params: redemptionIdParam, body: deliveryBody }),
+    handle(async (req) => ok(await service.confirmDelivery(req.params.redemptionId, req.body, authOf(req)))),
+  );
+  r.post(
+    '/staff/armory/redemptions/:redemptionId/approve',
+    requireAuth,
+    requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ params: redemptionIdParam, body: approvePickupBody }),
+    handle(async (req) => ok(await service.approvePickup(req.params.redemptionId, req.body, authOf(req)))),
   );
   r.post(
     '/staff/armory/redemptions/:redemptionId/decision',

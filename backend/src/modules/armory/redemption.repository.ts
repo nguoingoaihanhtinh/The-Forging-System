@@ -1,6 +1,6 @@
 import { db } from '../../db/database';
 import { sql } from '../../db/sql';
-import type { RedemptionHistoryFilter } from './redemption.validation';
+import type { RedemptionHistoryFilter, StaffRedemptionFilter } from './redemption.validation';
 
 export interface RedeemingMember {
   id: string;
@@ -39,6 +39,12 @@ export interface RedemptionHistoryView extends RedemptionView {
   pickupBranchName: string;
   decidedAt: Date | null;
   reason: string | null;
+}
+
+export interface StaffRedemptionView extends RedemptionHistoryView {
+  memberId: string;
+  memberCode: string;
+  memberFullName: string;
 }
 
 export interface RedemptionState extends RedemptionView {
@@ -102,9 +108,43 @@ export class RedemptionRepository {
   ) {
     return sql.one<RedemptionState>(
       `UPDATE redemptions SET status=$2,decided_by=$3,decided_at=now(),reason=$4,
-      delivery_evidence_url=$5,updated_at=now() WHERE id=$1 AND status='PENDING_PICKUP'
+      delivery_evidence_url=$5,updated_at=now() WHERE id=$1 AND status IN ('PENDING_PICKUP','READY_PICKUP')
       RETURNING ${orderColumns},member_id,reason,decided_by,decided_at,delivery_evidence_url`,
       [id, status, actorId, reason, evidence],
+    );
+  }
+
+  async staffList(filter: StaffRedemptionFilter, limit: number, offset: number) {
+    const where = `($1::text IS NULL OR d.status=$1)
+      AND ($2::uuid IS NULL OR d.pickup_branch_id=$2)
+      AND ($3::text IS NULL OR d.redemption_code ILIKE '%' || $3 || '%'
+        OR m.member_code ILIKE '%' || $3 || '%' OR u.full_name ILIKE '%' || $3 || '%')`;
+    const params = [filter.status ?? null, filter.branchId ?? null, filter.q ?? null];
+    const items = await sql.many<StaffRedemptionView>(
+      `SELECT d.id,d.redemption_code,d.reward_id,d.pickup_branch_id,d.marks_cost,d.status,d.requested_at,
+      d.decided_at,d.reason,d.member_id,m.member_code,u.full_name AS member_full_name,
+      r.name AS reward_name,r.sku AS reward_sku,r.image_url AS reward_image_url,b.name AS pickup_branch_name
+      FROM redemptions d JOIN members m ON m.user_id=d.member_id AND m.tenant_id=d.tenant_id
+      JOIN users u ON u.id=d.member_id AND u.tenant_id=d.tenant_id
+      JOIN rewards r ON r.id=d.reward_id AND r.tenant_id=d.tenant_id
+      JOIN branches b ON b.id=d.pickup_branch_id AND b.tenant_id=d.tenant_id
+      WHERE ${where}
+      ORDER BY CASE d.status WHEN 'READY_PICKUP' THEN 0 WHEN 'PENDING_PICKUP' THEN 1 ELSE 2 END,
+      d.requested_at ASC,d.id ASC LIMIT $4 OFFSET $5`,
+      [...params, limit, offset],
+    );
+    const total = await sql.scalar<number>(`SELECT count(*)::int FROM redemptions d
+      JOIN members m ON m.user_id=d.member_id AND m.tenant_id=d.tenant_id
+      JOIN users u ON u.id=d.member_id AND u.tenant_id=d.tenant_id WHERE ${where}`, params);
+    return { items, total: total ?? 0 };
+  }
+
+  transitionToReadyPickup(id: string, actorId: string, reason: string | null) {
+    return sql.one<RedemptionState>(
+      `UPDATE redemptions SET status='READY_PICKUP',decided_by=$2,decided_at=now(),reason=$3,updated_at=now()
+      WHERE id=$1 AND status='PENDING_PICKUP'
+      RETURNING ${orderColumns},member_id,reason,decided_by,decided_at,delivery_evidence_url`,
+      [id, actorId, reason],
     );
   }
 
@@ -154,7 +194,7 @@ export class RedemptionRepository {
     return (
       (await sql.scalar<number>(
         `SELECT count(*)::int FROM redemptions WHERE member_id=$1 AND reward_id=$2
-      AND status IN ('PENDING_PICKUP','DELIVERED') AND ($3::timestamptz IS NULL OR requested_at >= $3)
+      AND status IN ('PENDING_PICKUP','READY_PICKUP','DELIVERED') AND ($3::timestamptz IS NULL OR requested_at >= $3)
       AND ($4::timestamptz IS NULL OR requested_at < $4)`,
         [memberId, rewardId, start, end],
       )) ?? 0
