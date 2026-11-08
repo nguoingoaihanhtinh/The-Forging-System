@@ -117,7 +117,7 @@ describe('CHL-06 evidence and coach approval', () => {
     approveParticipation: vi.fn(),
   };
   const audit = { record: vi.fn() };
-  const points = { award: vi.fn() };
+  const points = { award: vi.fn(), reverseByKey: vi.fn() };
   const settings = { getNumber: vi.fn() };
   const service = new ChallengeService(
     repo as unknown as ChallengeRepository,
