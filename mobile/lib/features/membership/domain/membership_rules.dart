@@ -46,3 +46,66 @@ enum CurrentPackageBadge {
 
 CurrentPackageBadge currentPackageBadge(MemberPackage p) =>
     p.endingSoon ? CurrentPackageBadge.endingSoon : CurrentPackageBadge.active;
+
+enum MembershipBannerKind { frozen, noPackage, expiring, ended }
+
+class MembershipBannerData {
+  const MembershipBannerData({
+    required this.kind,
+    required this.title,
+    required this.ctaLabel,
+    this.bonusLabel,
+  });
+
+  final MembershipBannerKind kind;
+  final String title;
+  final String ctaLabel;
+
+  /// Early-renewal reward chip (expiring only).
+  final String? bonusLabel;
+}
+
+/// What the status banner says, or null when there is nothing to warn about.
+/// The server decides when a package is ending (`renewNotice`), not the app.
+/// [showNoPackage] is false on "Gói tập", which already has its own empty state.
+MembershipBannerData? membershipBanner(MyMembership m,
+    {bool showNoPackage = true}) {
+  if (m.memberStatus == MemberStatus.frozen) {
+    return const MembershipBannerData(
+      kind: MembershipBannerKind.frozen,
+      title: 'Tài khoản đang đóng băng — chế độ chỉ xem',
+      ctaLabel: 'Đăng ký / gia hạn gói để mở lại',
+    );
+  }
+  switch (m.renewNotice) {
+    case RenewNotice.noPackage:
+      return showNoPackage
+          ? const MembershipBannerData(
+              kind: MembershipBannerKind.noPackage,
+              title: 'Chào mừng! Bạn chưa có gói tập',
+              ctaLabel: 'Đăng ký gói tập',
+            )
+          : null;
+    case RenewNotice.ended:
+      return const MembershipBannerData(
+        kind: MembershipBannerKind.ended,
+        title: 'Gói tập đã kết thúc.',
+        ctaLabel: 'ĐĂNG KÝ GÓI MỚI',
+      );
+    case RenewNotice.endingSoon:
+      final cur = m.current;
+      final days = cur?.daysRemaining;
+      final sessions = cur?.sessionsRemaining;
+      final left = days != null
+          ? ' — còn $days ngày'
+          : (sessions != null ? ' — còn $sessions buổi' : '');
+      return MembershipBannerData(
+        kind: MembershipBannerKind.expiring,
+        title: 'Gói sắp kết thúc$left',
+        ctaLabel: 'GIA HẠN NGAY',
+        bonusLabel: '+50 Marks',
+      );
+    case RenewNotice.ok:
+      return null;
+  }
+}

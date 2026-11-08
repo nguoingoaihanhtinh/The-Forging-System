@@ -198,6 +198,33 @@ void main() {
     expect(find.text('Hôm nay là ngày cuối'), findsOneWidget);
   });
 
+  testWidgets('banner variants on the package screen', (tester) async {
+    await _pump(tester,
+        () async => _m(status: MemberStatus.frozen, notice: RenewNotice.ended));
+    expect(
+        find.text('Tài khoản đang đóng băng — chế độ chỉ xem'), findsOneWidget);
+    expect(find.text('ĐĂNG KÝ / GIA HẠN GÓI ĐỂ MỞ LẠI'), findsOneWidget);
+  });
+
+  testWidgets('ended banner', (tester) async {
+    await _pump(tester, () async => _m(notice: RenewNotice.ended));
+    expect(find.text('Gói tập đã kết thúc.'), findsOneWidget);
+    expect(find.text('ĐĂNG KÝ GÓI MỚI'), findsOneWidget);
+  });
+
+  testWidgets('expiring banner follows the server values', (tester) async {
+    await _pump(tester,
+        () async => _m(current: _current, notice: RenewNotice.endingSoon));
+    expect(find.text('Gói sắp kết thúc — còn 7 ngày'), findsOneWidget);
+    expect(find.text('GIA HẠN NGAY'), findsOneWidget);
+    expect(find.text('+50 MARKS'), findsOneWidget);
+  });
+
+  testWidgets('no-plan banner is not repeated here', (tester) async {
+    await _pump(tester, () async => _m(notice: RenewNotice.noPackage));
+    expect(find.text('Chào mừng! Bạn chưa có gói tập'), findsNothing);
+  });
+
   testWidgets('ProfileTab row pushes the membership route', (tester) async {
     final router = GoRouter(
       routes: <RouteBase>[

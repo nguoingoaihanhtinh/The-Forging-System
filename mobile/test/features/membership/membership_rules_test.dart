@@ -22,6 +22,7 @@ MemberPackage _pkg({
     );
 
 void main() {
+  _bannerTests();
   test('sessionsLabel for limited and unlimited packages', () {
     expect(sessionsLabel(_pkg()), '30/36 buổi đã dùng · còn 6');
     expect(sessionsLabel(_pkg(remaining: null)), '30/36 buổi đã dùng · còn 6');
@@ -50,4 +51,57 @@ void main() {
     expect(currentPackageBadge(_pkg()).label, 'Đang hoạt động');
     expect(currentPackageBadge(_pkg(endingSoon: true)).label, 'Sắp hết hạn');
   });
+}
+
+void _bannerTests() {
+  MyMembership m(RenewNotice n,
+          {MemberStatus st = MemberStatus.active, MemberPackage? cur}) =>
+      MyMembership(memberStatus: st, renewNotice: n, current: cur);
+
+  group('membershipBanner', () {
+    test('frozen wins over every notice', () {
+      final b =
+          membershipBanner(m(RenewNotice.ended, st: MemberStatus.frozen))!;
+      expect(b.kind, MembershipBannerKind.frozen);
+      expect(b.title, 'Tài khoản đang đóng băng — chế độ chỉ xem');
+    });
+
+    test('no package can be hidden', () {
+      expect(membershipBanner(m(RenewNotice.noPackage))!.ctaLabel,
+          'Đăng ký gói tập');
+      expect(membershipBanner(m(RenewNotice.noPackage), showNoPackage: false),
+          isNull);
+    });
+
+    test('ended and ok', () {
+      expect(
+          membershipBanner(m(RenewNotice.ended))!.ctaLabel, 'ĐĂNG KÝ GÓI MỚI');
+      expect(membershipBanner(m(RenewNotice.ok)), isNull);
+    });
+
+    test('expiring uses the server days, then sessions', () {
+      final days = membershipBanner(
+          m(RenewNotice.endingSoon, cur: _pkg(endingSoon: true).copyDays(5)))!;
+      expect(days.title, 'Gói sắp kết thúc — còn 5 ngày');
+      expect(days.bonusLabel, '+50 Marks');
+      final sessions = membershipBanner(m(RenewNotice.endingSoon,
+          cur: _pkg(endingSoon: true).copyDays(null)))!;
+      expect(sessions.title, 'Gói sắp kết thúc — còn 6 buổi');
+    });
+  });
+}
+
+extension on MemberPackage {
+  MemberPackage copyDays(int? days) => MemberPackage(
+        id: id,
+        name: name,
+        isTrial: isTrial,
+        startDate: startDate,
+        endDate: endDate,
+        totalSessions: totalSessions,
+        usedSessions: usedSessions,
+        sessionsRemaining: sessionsRemaining,
+        daysRemaining: days,
+        endingSoon: endingSoon,
+      );
 }

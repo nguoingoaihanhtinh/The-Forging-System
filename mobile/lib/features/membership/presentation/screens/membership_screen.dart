@@ -9,7 +9,9 @@ import '../../../../core/widgets/hvp_refresh.dart';
 import '../../../../core/widgets/section_header.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../domain/membership_models.dart';
+import '../../domain/membership_rules.dart';
 import '../providers/membership_providers.dart';
+import '../widgets/membership_banner.dart';
 import '../widgets/package_cards.dart';
 
 /// "Gói tập của tôi": account status, current / queued package, pending request.
@@ -48,6 +50,9 @@ class _Body extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: <Widget>[
+        const MembershipBanner(onAction: null, showNoPackage: false),
+        if (membershipBanner(m, showNoPackage: false) != null)
+          const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerLeft,
           child: StatusChip(
