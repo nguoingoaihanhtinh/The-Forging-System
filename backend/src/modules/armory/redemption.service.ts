@@ -11,6 +11,7 @@ import type { RedeemableReward, RedemptionRepository, RedemptionState } from './
 import type {
   CreateRedemptionInput,
   ApprovePickupInput,
+  DeliveryInput,
   RedemptionDecision,
   RedemptionHistoryFilter,
 } from './redemption.validation';
@@ -61,6 +62,23 @@ export class RedemptionService {
       reason: input.reason ?? null,
     });
     return { redemption: updated, duplicate: false };
+  }
+
+  /** GFT-04: hands over a ready gift and debits the reserved Marks once. */
+  async confirmDelivery(id: string, input: DeliveryInput, actor: AuthContext) {
+    const order = await this.lockOrder(id);
+    this.assertPickupBranch(order, actor);
+    if (order.status === 'DELIVERED') return { redemption: order, duplicate: true };
+    if (order.status !== 'READY_PICKUP') {
+      throw conflict('Chỉ đơn sẵn sàng nhận mới có thể xác nhận giao quà.', 'REDEMPTION_NOT_READY');
+    }
+    return this.close(
+      order,
+      'DELIVERED',
+      actor.userId,
+      input.reason ?? null,
+      input.deliveryEvidenceUrl ?? null,
+    );
   }
 
   /** Internal system hook; caller must check the expiry deadline before invoking it. */

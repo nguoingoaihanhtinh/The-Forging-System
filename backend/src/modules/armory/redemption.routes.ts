@@ -10,6 +10,7 @@ import {
   approvePickupBody,
   cancelBody,
   createRedemptionBody,
+  deliveryBody,
   decisionBody,
   redemptionHistoryQuery,
   redemptionIdParam,
@@ -59,6 +60,13 @@ export function redemptionRoutes(service: RedemptionService): Router {
     handle(async (req) =>
       ok(await service.cancel(authOf(req).userId, req.params.redemptionId, req.body.reason)),
     ),
+  );
+  r.post(
+    '/staff/armory/redemptions/:redemptionId/deliver',
+    requireAuth,
+    requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ params: redemptionIdParam, body: deliveryBody }),
+    handle(async (req) => ok(await service.confirmDelivery(req.params.redemptionId, req.body, authOf(req)))),
   );
   r.post(
     '/staff/armory/redemptions/:redemptionId/approve',

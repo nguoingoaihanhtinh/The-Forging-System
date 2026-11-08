@@ -212,6 +212,32 @@ Retry trên đơn đã `READY_PICKUP` trả `200` với `duplicate: true`. Đơn
 
 Migration `0013_redemption_ready_pickup.sql` bổ sung status mới. Tính toán Marks held và quota quà tính cả `PENDING_PICKUP` và `READY_PICKUP`.
 
+---
+
+# GFT-04 — Xác nhận giao quà và trừ Marks
+
+## API
+
+```http
+POST /api/v1/staff/armory/redemptions/:redemptionId/deliver
+```
+
+Chỉ `RECEPTIONIST`, `ADMIN`, `SUPER_ADMIN`; quy tắc chi nhánh giống API duyệt GFT-03.
+
+Body tùy chọn:
+
+```json
+{
+  "reason": "Đã bàn giao tại quầy",
+  "deliveryEvidenceUrl": "https://files.example/receipt.jpg"
+}
+```
+
+- Chỉ đơn `READY_PICKUP` được giao; trạng thái khác trả `409 REDEMPTION_NOT_READY`.
+- Chuyển trạng thái sang `DELIVERED` và trừ Marks đúng `marksCost` snapshot bằng ledger `ARMORY_REDEEM` idempotent.
+- Stock đã được reserve từ lúc tạo redemption nên không trừ thêm.
+- Retry trên đơn `DELIVERED` trả `200` với `duplicate: true`, không trừ Marks lần hai.
+
 
 ---
 

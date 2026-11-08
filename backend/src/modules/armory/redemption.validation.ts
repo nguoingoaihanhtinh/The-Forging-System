@@ -40,6 +40,19 @@ export const decisionBody = z.discriminatedUnion('status', [
 ]);
 export type RedemptionDecision = z.infer<typeof decisionBody>;
 
+export const deliveryBody = z
+  .object({
+    reason: z.string().trim().min(3).max(500).optional(),
+    deliveryEvidenceUrl: z
+      .string()
+      .url()
+      .max(2000)
+      .refine((value) => /^https?:\/\//i.test(value))
+      .optional(),
+  })
+  .strict();
+export type DeliveryInput = z.infer<typeof deliveryBody>;
+
 export const approvePickupBody = z
   .object({ reason: z.string().trim().min(3).max(500).optional() })
   .strict();

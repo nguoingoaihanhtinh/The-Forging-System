@@ -26,9 +26,10 @@ describe('GFT-03 redemption approval', () => {
     lockMember: vi.fn(),
     lockOrder: vi.fn(),
     transitionToReadyPickup: vi.fn(),
+    transition: vi.fn(),
   };
   const audit = { record: vi.fn() };
-  const points = {};
+  const points = { award: vi.fn() };
   const service = new RedemptionService(
     repo as unknown as RedemptionRepository,
     audit as unknown as AuditService,
@@ -65,5 +66,37 @@ describe('GFT-03 redemption approval', () => {
     await expect(service.approvePickup(order.id, {}, { ...reception, branchId: 'branch-2' })).rejects.toMatchObject({
       code: 'PICKUP_BRANCH_MISMATCH',
     });
+  });
+
+  it('delivers only a ready redemption and debits its exact Marks snapshot', async () => {
+    vi.resetAllMocks();
+    const ready = { ...order, status: 'READY_PICKUP' };
+    const delivered = { ...ready, status: 'DELIVERED' };
+    repo.memberForOrder.mockResolvedValue(order.memberId);
+    repo.lockMember.mockResolvedValue({ id: order.memberId });
+    repo.lockOrder.mockResolvedValue(ready);
+    repo.transition.mockResolvedValue(delivered);
+
+    await expect(service.confirmDelivery(order.id, { reason: 'Đã giao tại quầy' }, reception)).resolves.toEqual({
+      redemption: delivered,
+      duplicate: false,
+    });
+    expect(points.award).toHaveBeenCalledWith(expect.objectContaining({
+      memberId: order.memberId,
+      marks: -order.marksCost,
+      redemptionId: order.id,
+    }));
+    expect(repo.transition).toHaveBeenCalledWith(order.id, 'DELIVERED', reception.userId, 'Đã giao tại quầy', null);
+  });
+
+  it('does not debit a redemption that was not approved for pickup', async () => {
+    vi.resetAllMocks();
+    repo.memberForOrder.mockResolvedValue(order.memberId);
+    repo.lockMember.mockResolvedValue({ id: order.memberId });
+    repo.lockOrder.mockResolvedValue(order);
+    await expect(service.confirmDelivery(order.id, {}, reception)).rejects.toMatchObject({
+      code: 'REDEMPTION_NOT_READY',
+    });
+    expect(points.award).not.toHaveBeenCalled();
   });
 });
