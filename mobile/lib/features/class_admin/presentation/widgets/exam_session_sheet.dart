@@ -1,0 +1,116 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/hvp_bottom_sheet.dart';
+import '../../../../core/widgets/hvp_button.dart';
+import '../../../../core/widgets/hvp_text_field.dart';
+import '../../../../core/widgets/hvp_toast.dart';
+import '../../../../core/widgets/inline_banner.dart';
+import '../class_providers.dart';
+
+/// CLS-09: exam session of a class on a chosen day.
+Future<void> showExamSheet(BuildContext context,
+        {required String classId, required String className}) =>
+    showHvpSheet<void>(context,
+        title: 'Buổi kiểm tra',
+        builder: (_) =>
+            ExamSessionSheet(classId: classId, className: className));
+
+class ExamSessionSheet extends ConsumerStatefulWidget {
+  const ExamSessionSheet(
+      {super.key, required this.classId, required this.className});
+
+  final String classId;
+  final String className;
+
+  @override
+  ConsumerState<ExamSessionSheet> createState() => _ExamSessionSheetState();
+}
+
+class _ExamSessionSheetState extends ConsumerState<ExamSessionSheet> {
+  final _title = TextEditingController();
+  final _date = TextEditingController();
+  DateTime? _day;
+  bool _missingDay = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(
+        () => ref.read(classSubmitProvider.notifier).reset());
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _date.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDay() async {
+    final today = toVietnamTime(DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _day ?? today,
+      firstDate: DateTime(today.year, today.month, today.day),
+      lastDate: DateTime(today.year + 1, today.month, today.day),
+    );
+    if (picked == null) return;
+    setState(() {
+      _day = picked;
+      _missingDay = false;
+      _date.text = formatCalendarDate(toIsoDate(picked));
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_day == null) {
+      setState(() => _missingDay = true);
+      return;
+    }
+    final ok = await ref.read(classSubmitProvider.notifier).run(() => ref
+        .read(classRepositoryProvider)
+        .createExamSession(widget.classId, toIsoDate(_day!),
+            title: _title.text));
+    if (!mounted || !ok) return;
+    ref.invalidate(classSessionsProvider(widget.classId));
+    HvpToast.success(context, 'Đã tạo buổi kiểm tra.');
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final submit = ref.watch(classSubmitProvider);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            HvpTextField(
+                label: 'Lớp',
+                controller: TextEditingController(text: widget.className),
+                enabled: false),
+            const SizedBox(height: 14),
+            HvpTextField(
+                label: 'Ngày',
+                controller: _date,
+                readOnly: true,
+                onTap: _pickDay,
+                helper: _missingDay
+                    ? 'Vui lòng chọn ngày.'
+                    : 'Giờ và độ dài theo lịch của lớp.'),
+            const SizedBox(height: 14),
+            HvpTextField(
+                label: 'Tên buổi kiểm tra', controller: _title, maxLength: 200),
+            if (submit.error != null) InlineBanner(message: submit.error!),
+            const SizedBox(height: 16),
+            HvpButton.primary(
+                label: 'Tạo buổi kiểm tra',
+                expand: true,
+                loading: submit.submitting,
+                onPressed: submit.submitting ? null : _submit),
+          ]),
+    );
+  }
+}

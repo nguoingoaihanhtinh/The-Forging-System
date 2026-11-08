@@ -1,7 +1,6 @@
 import 'package:go_router/go_router.dart';
 
 import '../../core/design/hvp_icons.dart';
-import '../../core/widgets/coming_soon_page.dart';
 import '../../features/auth/domain/auth_user.dart';
 import '../../features/branch_qr/presentation/branch_qr_route.dart';
 import '../../features/reception_checkin/domain/member_hit.dart';
@@ -9,6 +8,8 @@ import '../../features/reception_checkin/presentation/assisted_checkin_screen.da
 import '../../features/reception_checkin/presentation/member_today_screen.dart';
 import '../../features/reception_checkin/presentation/reception_checkin_tab.dart';
 import '../../features/reception_gifts/presentation/gift_handover_tab.dart';
+import '../../features/reception_memberships/presentation/screens/member_detail_screen.dart';
+import '../../features/reception_memberships/presentation/screens/reception_memberships_tab.dart';
 import '../../features/reception_stock/presentation/reception_stock_tab.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
@@ -31,12 +32,7 @@ List<RouteBase> receptionRoutes() => <RouteBase>[
             label: 'Gói tập',
             icon: HvpIcons.ticket,
             activeIcon: HvpIcons.ticketFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Gói tập',
-              owner: 'feature: reception_memberships',
-              icon: HvpIcons.ticket,
-              description: 'Yêu cầu, học viên và thống kê theo gói.',
-            ),
+            builder: (_) => const ReceptionMembershipsTab(),
           ),
           ShellTab(
             path: ReceptionPaths.stock,
@@ -72,6 +68,12 @@ List<RouteBase> receptionRoutes() => <RouteBase>[
           memberId: state.pathParameters['memberId'] ?? '',
           sessionId: state.pathParameters['sessionId'] ?? '',
           member: state.extra is MemberHit ? state.extra! as MemberHit : null,
+        ),
+      ),
+      GoRoute(
+        path: ReceptionPaths.membershipMemberPattern,
+        builder: (context, state) => MemberDetailScreen(
+          memberId: state.pathParameters['memberId'] ?? '',
         ),
       ),
     ];

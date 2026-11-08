@@ -63,7 +63,7 @@ export function memberRoutes(service: MemberService): Router {
     await service.changeStatus({ memberId: req.params.memberId, ...req.body, by: auth.userId, via: 'MANUAL', actorRoles: auth.roles });
     return noContent();
   }));
-  r.post('/admin/members/merge', requireRoles(...RoleGroup.ADMINS), validate({ body: mergeBody }), handle(async (req) => {
+  r.post('/admin/members/merge', requireRoles(...RoleGroup.FRONT_DESK), validate({ body: mergeBody }), handle(async (req) => {
     await service.merge({ ...req.body, by: authOf(req).userId });
     return noContent();
   }));

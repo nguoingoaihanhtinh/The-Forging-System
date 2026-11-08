@@ -8,4 +8,18 @@ class BranchAdminApi {
 
   Future<ApiEnvelope> branches() =>
       _api.get('/branches', query: <String, dynamic>{'includeInactive': true});
+
+  Future<ApiEnvelope> create(Map<String, dynamic> body) =>
+      _api.post('/admin/branches', body: body);
+
+  Future<ApiEnvelope> update(String id, Map<String, dynamic> body) =>
+      _api.patch('/admin/branches/$id', body: body);
+
+  Future<ApiEnvelope> setStatus(String id, Map<String, dynamic> body) =>
+      _api.post('/admin/branches/$id/status', body: body);
+
+  Future<ApiEnvelope> qr(String id) => _api.get('/branches/$id/qr');
+
+  Future<ApiEnvelope> rotateQr(String id, Map<String, dynamic> body) =>
+      _api.post('/admin/branches/$id/qr/rotate', body: body);
 }

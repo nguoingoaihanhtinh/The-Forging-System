@@ -13,24 +13,11 @@ import 'package:hvp_forging/core/widgets/hvp_button.dart';
 import 'package:hvp_forging/core/widgets/shimmer_box.dart';
 import 'package:hvp_forging/features/auth/presentation/providers/auth_controller.dart';
 import 'package:hvp_forging/features/membership/domain/membership_models.dart';
-import 'package:hvp_forging/features/membership/domain/membership_repository.dart';
 import 'package:hvp_forging/features/membership/presentation/providers/membership_providers.dart';
 import 'package:hvp_forging/features/membership/presentation/screens/membership_screen.dart';
 
+import '../../helpers/fake_membership_repository.dart';
 import '../../helpers/test_harness.dart';
-
-class _FakeRepo implements MembershipRepository {
-  _FakeRepo(this.result);
-
-  final Future<MyMembership> Function() result;
-  int calls = 0;
-
-  @override
-  Future<MyMembership> getMyMembership() {
-    calls++;
-    return result();
-  }
-}
 
 const _current = MemberPackage(
   id: 'c',
@@ -54,9 +41,9 @@ const _queued = MemberPackage(
   totalSessions: 36,
 );
 
-Future<_FakeRepo> _pump(
+Future<FakeMembershipRepository> _pump(
     WidgetTester tester, Future<MyMembership> Function() result) async {
-  final repo = _FakeRepo(result);
+  final repo = FakeMembershipRepository(result);
   await pumpHvp(
     tester,
     const MembershipScreen(),
@@ -91,8 +78,8 @@ void main() {
       tester,
       const MembershipScreen(),
       overrides: <Override>[
-        membershipRepositoryProvider
-            .overrideWithValue(_FakeRepo(() => completer.future)),
+        membershipRepositoryProvider.overrideWithValue(
+            FakeMembershipRepository(() => completer.future)),
         currentUserIdProvider.overrideWithValue('u1'),
       ],
     );
@@ -112,7 +99,7 @@ void main() {
     fail = false;
     await tester.tap(find.byType(HvpButton));
     await tester.pumpAndSettle();
-    expect(repo.calls, 2);
+    expect(repo.membershipCalls, 2);
     expect(find.byType(EmptyState), findsOneWidget);
   });
 
@@ -196,6 +183,97 @@ void main() {
     );
     expect(find.text('ĐÓNG BĂNG'), findsOneWidget);
     expect(find.text('Hôm nay là ngày cuối'), findsOneWidget);
+  });
+
+  testWidgets('banner variants on the package screen', (tester) async {
+    await _pump(tester,
+        () async => _m(status: MemberStatus.frozen, notice: RenewNotice.ended));
+    expect(
+        find.text('Tài khoản đang đóng băng — chế độ chỉ xem'), findsOneWidget);
+    expect(find.text('ĐĂNG KÝ / GIA HẠN GÓI ĐỂ MỞ LẠI'), findsOneWidget);
+  });
+
+  testWidgets('ended banner', (tester) async {
+    await _pump(tester, () async => _m(notice: RenewNotice.ended));
+    expect(find.text('Gói tập đã kết thúc.'), findsOneWidget);
+    expect(find.text('ĐĂNG KÝ GÓI MỚI'), findsOneWidget);
+  });
+
+  testWidgets('expiring banner follows the server values', (tester) async {
+    await _pump(tester,
+        () async => _m(current: _current, notice: RenewNotice.endingSoon));
+    expect(find.text('Gói sắp kết thúc — còn 7 ngày'), findsOneWidget);
+    expect(find.text('GIA HẠN NGAY'), findsOneWidget);
+    expect(find.text('+50 MARKS'), findsOneWidget);
+  });
+
+  testWidgets('no-plan banner is not repeated here', (tester) async {
+    await _pump(tester, () async => _m(notice: RenewNotice.noPackage));
+    expect(find.text('Chào mừng! Bạn chưa có gói tập'), findsNothing);
+  });
+
+  testWidgets('renewal history lists status, package, date and reason',
+      (tester) async {
+    final repo = FakeMembershipRepository(
+      () async => _m(notice: RenewNotice.noPackage),
+      history: () async => <RenewalRequest>[
+        RenewalRequest(
+          id: 'r1',
+          status: RenewalStatus.cancelled,
+          packageName: 'BOOK II',
+          priceVnd: 9800000,
+          reason: 'Chưa nhận được tiền',
+          createdAt: DateTime.utc(2026, 10, 24, 5),
+        ),
+        RenewalRequest(
+          id: 'r2',
+          status: RenewalStatus.completed,
+          packageName: 'BOOK I',
+          createdAt: DateTime.utc(2026, 8, 1, 5),
+        ),
+      ],
+    );
+    await pumpHvp(tester, const MembershipScreen(), overrides: <Override>[
+      membershipRepositoryProvider.overrideWithValue(repo),
+      currentUserIdProvider.overrideWithValue('u1'),
+    ]);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('BOOK I'), 200);
+    expect(find.text('ĐÃ HUỶ'), findsOneWidget);
+    expect(find.text('ĐÃ GIA HẠN'), findsOneWidget);
+    expect(find.text('Gửi 24/10/2026 · 9.800.000đ'), findsOneWidget);
+    expect(find.text('Lý do huỷ: Chưa nhận được tiền'), findsOneWidget);
+    expect(find.text('Gửi 01/08/2026 · Chưa có giá'), findsOneWidget);
+  });
+
+  testWidgets('empty history', (tester) async {
+    await _pump(tester, () async => _m(notice: RenewNotice.noPackage));
+    await tester.scrollUntilVisible(
+        find.text('Bạn chưa gửi yêu cầu gia hạn nào'), 200);
+    expect(find.text('Bạn chưa gửi yêu cầu gia hạn nào'), findsOneWidget);
+  });
+
+  testWidgets('history error stays inline and retries', (tester) async {
+    var fail = true;
+    final repo = FakeMembershipRepository(
+      () async => _m(notice: RenewNotice.noPackage),
+      history: () async {
+        if (fail) throw const ApiException(code: 'X', message: 'Lỗi lịch sử');
+        return <RenewalRequest>[];
+      },
+    );
+    await pumpHvp(tester, const MembershipScreen(), overrides: <Override>[
+      membershipRepositoryProvider.overrideWithValue(repo),
+      currentUserIdProvider.overrideWithValue('u1'),
+    ]);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Lỗi lịch sử'), 200);
+    expect(find.text('CHƯA CÓ GÓI TẬP'), findsOneWidget);
+    fail = false;
+    await tester.tap(find.widgetWithText(HvpButton, 'THỬ LẠI'));
+    await tester.pumpAndSettle();
+    expect(repo.historyCalls, 2);
+    expect(find.text('Bạn chưa gửi yêu cầu gia hạn nào'), findsOneWidget);
   });
 
   testWidgets('ProfileTab row pushes the membership route', (tester) async {

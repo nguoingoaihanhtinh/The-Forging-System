@@ -145,6 +145,28 @@ class _ConfigTab extends StatelessWidget {
                       style: context.txt.bodySmall)),
             ]),
           ),
+          if (tab.label == 'Khác') ...<Widget>[
+            const SizedBox(height: 12),
+            HvpCard(
+              onTap: () => context.push(AdminPaths.renewalRequests),
+              child: Row(children: <Widget>[
+                Icon(HvpIcons.ticket, color: context.hvp.gold),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('Yêu cầu gia hạn', style: context.txt.titleS),
+                      const SizedBox(height: 2),
+                      Text('Duyệt hoặc huỷ yêu cầu gia hạn của học viên.',
+                          style: context.txt.bodySmall),
+                    ],
+                  ),
+                ),
+                Icon(HvpIcons.caretRight, color: context.hvp.textMuted),
+              ]),
+            ),
+          ],
           if (tab.label == 'Armory') ...<Widget>[
             const SizedBox(height: 12),
             HvpCard(

@@ -13,9 +13,13 @@ import 'package:hvp_forging/core/widgets/hvp_nav_bar.dart';
 import 'package:hvp_forging/features/auth/domain/auth_user.dart';
 import 'package:hvp_forging/features/auth/presentation/providers/auth_providers.dart';
 import 'package:hvp_forging/features/auth/presentation/screens/login_screen.dart';
+import 'package:hvp_forging/features/fighter_record/presentation/providers/fighter_record_providers.dart';
+import 'package:hvp_forging/features/profile/presentation/providers/profile_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/fake_auth_repository.dart';
+import '../features/fighter_record/fixtures.dart';
+import '../features/profile/fixtures.dart';
 import '../helpers/test_harness.dart';
 
 Future<ProviderContainer> _pumpApp(
@@ -34,6 +38,9 @@ Future<ProviderContainer> _pumpApp(
         sharedPreferencesProvider.overrideWithValue(prefs),
         tokenStoreProvider.overrideWithValue(MemoryTokenStore()),
         authRepositoryProvider.overrideWithValue(repo),
+        profileRepositoryProvider.overrideWithValue(FakeProfileRepository()),
+        fighterRecordRepositoryProvider
+            .overrideWithValue(FakeFighterRecordRepository()),
       ],
       child: const HvpApp(),
     ),
@@ -42,27 +49,37 @@ Future<ProviderContainer> _pumpApp(
   return ProviderScope.containerOf(tester.element(find.byType(HvpApp)));
 }
 
-Finder _navLabel(String label) => find.descendant(of: find.byType(HvpNavBar), matching: find.text(label));
+Finder _navLabel(String label) =>
+    find.descendant(of: find.byType(HvpNavBar), matching: find.text(label));
 
 void main() {
-  testWidgets('without a session the app shows the login screen', (tester) async {
+  testWidgets('without a session the app shows the login screen',
+      (tester) async {
     await _pumpApp(tester, FakeAuthRepository());
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.byType(HvpNavBar), findsNothing);
   });
 
   testWidgets('student lands on the 5-tab shell', (tester) async {
-    await _pumpApp(tester, FakeAuthRepository(restored: makeUser(AppRole.student)));
+    await _pumpApp(
+        tester, FakeAuthRepository(restored: makeUser(AppRole.student)));
 
     expect(find.byType(HvpNavBar), findsOneWidget);
-    for (final label in <String>['Trang chủ', 'Lịch tập', 'Check-in', 'Armory', 'Hồ sơ']) {
+    for (final label in <String>[
+      'Trang chủ',
+      'Lịch tập',
+      'Check-in',
+      'Armory',
+      'Hồ sơ'
+    ]) {
       expect(_navLabel(label), findsOneWidget, reason: label);
     }
     expect(find.byType(ComingSoonPage), findsOneWidget);
   });
 
   testWidgets('placeholder tabs keep working when switching', (tester) async {
-    await _pumpApp(tester, FakeAuthRepository(restored: makeUser(AppRole.student)));
+    await _pumpApp(
+        tester, FakeAuthRepository(restored: makeUser(AppRole.student)));
 
     await tester.tap(_navLabel('Hồ sơ'));
     await tester.pumpAndSettle();
@@ -73,9 +90,22 @@ void main() {
   });
 
   const staffTabs = <AppRole, List<String>>{
-    AppRole.coach: <String>['Hôm nay', 'Lớp & bài học', 'Challenge', 'Rank Trial', 'Lịch sử'],
+    AppRole.coach: <String>[
+      'Hôm nay',
+      'Lớp & bài học',
+      'Challenge',
+      'Rank Trial',
+      'Lịch sử'
+    ],
     AppRole.reception: <String>['Check-in', 'Gói tập', 'Kho quà', 'Giao quà'],
-    AppRole.admin: <String>['Dashboard', 'Thành viên', 'Đào tạo', 'Thử thách', 'Thông báo', 'Cấu hình'],
+    AppRole.admin: <String>[
+      'Dashboard',
+      'Thành viên',
+      'Đào tạo',
+      'Thử thách',
+      'Thông báo',
+      'Cấu hình'
+    ],
   };
   for (final entry in staffTabs.entries) {
     testWidgets('${entry.key.name} lands on its own shell', (tester) async {
@@ -88,7 +118,9 @@ void main() {
     });
   }
 
-  testWidgets('profile tab: account card, theme switch persists, logout returns to login', (tester) async {
+  testWidgets(
+      'profile tab: account card, theme switch persists, logout returns to login',
+      (tester) async {
     final repo = FakeAuthRepository(restored: makeUser(AppRole.student));
     final container = await _pumpApp(tester, repo);
 
@@ -96,17 +128,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Người Dùng student'), findsOneWidget);
     expect(find.text('HỌC VIÊN'), findsOneWidget);
+    expect(find.text('Thông tin cá nhân'.toUpperCase()), findsOneWidget);
+    expect(find.text('Chi nhánh chính'), findsOneWidget);
+    expect(find.text('Gói tập & gia hạn'), findsOneWidget);
 
     // Theme: dark by default, switch to light and check it was stored.
     expect(container.read(themeModeProvider), ThemeMode.dark);
     await tester.tap(find.text('SÁNG'));
     await tester.pumpAndSettle();
     expect(container.read(themeModeProvider), ThemeMode.light);
-    expect(container.read(sharedPreferencesProvider).getString(ThemeModeController.storageKey), 'light');
+    expect(
+        container
+            .read(sharedPreferencesProvider)
+            .getString(ThemeModeController.storageKey),
+        'light');
     expect(find.text('HỆ THỐNG'), findsNothing);
 
     // Logout goes through a confirmation sheet.
     await tester.ensureVisible(find.text('ĐĂNG XUẤT'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('ĐĂNG XUẤT'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(HvpButton, 'ĐĂNG XUẤT').last);

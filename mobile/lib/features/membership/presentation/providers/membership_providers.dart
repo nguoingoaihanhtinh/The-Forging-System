@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/network_providers.dart';
+import '../../../../core/state/submit_notifier.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/membership_api.dart';
 import '../../data/membership_repository_impl.dart';
@@ -17,4 +18,18 @@ final membershipRepositoryProvider = Provider<MembershipRepository>(
 final myMembershipProvider = FutureProvider.autoDispose<MyMembership>((ref) {
   ref.watch(currentUserIdProvider);
   return ref.watch(membershipRepositoryProvider).getMyMembership();
+});
+
+/// Packages on sale for the picker.
+final packageTypesProvider = FutureProvider.autoDispose<List<PackageType>>(
+    (ref) => ref.watch(membershipRepositoryProvider).listPackageTypes());
+
+final renewalSubmitProvider =
+    NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+/// First page of the member's renewal requests (newest first).
+final myRenewalRequestsProvider =
+    FutureProvider.autoDispose<List<RenewalRequest>>((ref) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(membershipRepositoryProvider).listMyRenewalRequests();
 });
