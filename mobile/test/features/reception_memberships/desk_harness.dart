@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hvp_forging/core/config/app_config.dart';
 import 'package:hvp_forging/core/network/api_client.dart';
@@ -50,9 +51,18 @@ class Desk {
             ReceptionMembershipsRepositoryImpl(ReceptionMembershipsApi(api))),
         memberSearchRepositoryProvider
             .overrideWithValue(MemberSearchRepositoryImpl(api)),
+        evidencePhotoBuilderProvider.overrideWithValue(fakePhotoField),
       ];
 
   /// Requests received for `METHOD /path`.
   List<RequestOptions> calls(String key) =>
       adapter.requests.where((o) => '${o.method} ${o.path}' == key).toList();
 }
+
+const String kEvidenceUrl = 'http://test.local/files/evidence/e.jpg';
+
+/// Stands in for the camera: a button that "uploads" [kEvidenceUrl].
+Widget fakePhotoField(BuildContext context, ValueChanged<String?> onChanged) =>
+    TextButton(
+        onPressed: () => onChanged(kEvidenceUrl),
+        child: const Text('CHỌN ẢNH'));

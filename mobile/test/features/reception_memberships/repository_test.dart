@@ -42,4 +42,16 @@ void main() {
     expect([r.id, r.memberName, r.packageName, r.priceVnd, r.currentEndDate],
         ['r1', 'Nguyễn Văn A', 'BOOK II', 9800000, '2026-11-30']);
   });
+
+  test('MEM-13 approveRenewal posts the evidence URL and returns the message',
+      () async {
+    boot(<String, Reply>{
+      'POST /renewal-requests/r1/approve': (_) =>
+          okEnvelope(<String, dynamic>{'message': 'Xong'}),
+    });
+    expect(await repo.approveRenewal('r1', evidenceUrl: 'http://x/files/a.jpg'),
+        'Xong');
+    expect(desk.calls('POST /renewal-requests/r1/approve').single.data,
+        <String, dynamic>{'paymentEvidenceUrl': 'http://x/files/a.jpg'});
+  });
 }

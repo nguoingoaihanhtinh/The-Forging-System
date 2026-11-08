@@ -17,4 +17,8 @@ class ReceptionMembershipsApi {
         'limit': limit,
         if (q != null && q.isNotEmpty) 'q': q,
       });
+
+  Future<ApiEnvelope> approveRenewal(String id, String evidenceUrl) =>
+      _api.post('/renewal-requests/$id/approve',
+          body: <String, dynamic>{'paymentEvidenceUrl': evidenceUrl});
 }

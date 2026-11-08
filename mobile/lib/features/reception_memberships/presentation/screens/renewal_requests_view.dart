@@ -12,12 +12,16 @@ import '../../../../core/widgets/hvp_button.dart';
 import '../../../../core/widgets/hvp_refresh.dart';
 import '../../../../core/widgets/hvp_text_field.dart';
 import '../../domain/renewal_models.dart';
+import '../renewal_actions.dart';
 import '../renewal_notifier.dart';
 import '../widgets/renewal_card.dart';
 
 /// Renewal request inbox: search, status filter, paging. Shared by the reception tab and the admin screen.
 class RenewalRequestsView extends ConsumerStatefulWidget {
-  const RenewalRequestsView({super.key});
+  const RenewalRequestsView(
+      {super.key, this.approveLabel = 'ĐỒNG Ý · ĐÃ THU PHÍ'});
+
+  final String approveLabel;
 
   @override
   ConsumerState<RenewalRequestsView> createState() =>
@@ -102,7 +106,21 @@ class _RenewalRequestsViewState extends ConsumerState<RenewalRequestsView> {
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, i) {
                     if (i == list.items.length) return _MoreButton(list: list);
-                    return RenewalCard(request: list.items[i]);
+                    final request = list.items[i];
+                    return RenewalCard(
+                      request: request,
+                      actions: !request.isPending
+                          ? const <Widget>[]
+                          : <Widget>[
+                              HvpButton.gold(
+                                label: widget.approveLabel,
+                                small: true,
+                                expand: true,
+                                onPressed: () =>
+                                    askApproveRenewal(context, ref, request),
+                              ),
+                            ],
+                    );
                   },
                 ),
               );
