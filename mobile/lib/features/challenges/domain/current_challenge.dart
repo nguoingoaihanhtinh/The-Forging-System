@@ -1,6 +1,7 @@
 class CurrentChallenge {
   const CurrentChallenge({
     required this.id,
+    required this.participationId,
     required this.title,
     required this.challengeType,
     required this.target,
@@ -9,9 +10,11 @@ class CurrentChallenge {
     required this.endsAt,
     required this.participationStatus,
     required this.progressValue,
+    this.evidenceUrl,
   });
 
   final String id;
+  final String participationId;
   final String title;
   final String challengeType;
   final int target;
@@ -20,6 +23,7 @@ class CurrentChallenge {
   final DateTime endsAt;
   final String participationStatus;
   final int progressValue;
+  final String? evidenceUrl;
 
   double get progress =>
       target == 0 ? 0 : (progressValue / target).clamp(0, 1).toDouble();
@@ -27,4 +31,5 @@ class CurrentChallenge {
 
 abstract interface class CurrentChallengeRepository {
   Future<List<CurrentChallenge>> list();
+  Future<void> submitEvidence(String challengeId, String evidenceUrl);
 }
