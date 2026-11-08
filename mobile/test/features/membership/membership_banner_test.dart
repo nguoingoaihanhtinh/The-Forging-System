@@ -7,20 +7,11 @@ import 'package:hvp_forging/core/error/api_exception.dart';
 import 'package:hvp_forging/core/widgets/hvp_button.dart';
 import 'package:hvp_forging/features/auth/presentation/providers/auth_controller.dart';
 import 'package:hvp_forging/features/membership/domain/membership_models.dart';
-import 'package:hvp_forging/features/membership/domain/membership_repository.dart';
 import 'package:hvp_forging/features/membership/presentation/providers/membership_providers.dart';
 import 'package:hvp_forging/features/membership/presentation/widgets/membership_banner.dart';
 
+import '../../helpers/fake_membership_repository.dart';
 import '../../helpers/test_harness.dart';
-
-class _Repo implements MembershipRepository {
-  _Repo(this.result);
-
-  final Future<MyMembership> Function() result;
-
-  @override
-  Future<MyMembership> getMyMembership() => result();
-}
 
 Future<void> _pump(WidgetTester tester, Future<MyMembership> Function() result,
     {bool settle = true}) async {
@@ -30,7 +21,8 @@ Future<void> _pump(WidgetTester tester, Future<MyMembership> Function() result,
       body: MembershipBanner(onAction: () {}),
     ),
     overrides: <Override>[
-      membershipRepositoryProvider.overrideWithValue(_Repo(result)),
+      membershipRepositoryProvider
+          .overrideWithValue(FakeMembershipRepository(result)),
       currentUserIdProvider.overrideWithValue('u1'),
     ],
   );
@@ -80,8 +72,8 @@ void main() {
       tester,
       Scaffold(body: MembershipBanner(onAction: () => taps++)),
       overrides: <Override>[
-        membershipRepositoryProvider
-            .overrideWithValue(_Repo(() async => _m(RenewNotice.ended))),
+        membershipRepositoryProvider.overrideWithValue(
+            FakeMembershipRepository(() async => _m(RenewNotice.ended))),
         currentUserIdProvider.overrideWithValue('u1'),
       ],
     );

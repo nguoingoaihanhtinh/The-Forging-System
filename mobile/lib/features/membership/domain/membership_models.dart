@@ -97,3 +97,23 @@ class MyMembership {
   final RenewNotice renewNotice;
   final bool canRenewEarly;
 }
+
+/// A sellable package from `GET /package-types`. Null limits mean unlimited,
+/// a null price means the price is not set yet.
+class PackageType {
+  const PackageType({
+    required this.id,
+    required this.name,
+    required this.isTrial,
+    this.durationDays,
+    this.totalSessions,
+    this.priceVnd,
+  });
+
+  final String id;
+  final String name;
+  final bool isTrial;
+  final int? durationDays;
+  final int? totalSessions;
+  final int? priceVnd;
+}

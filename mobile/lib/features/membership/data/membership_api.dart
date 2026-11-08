@@ -6,4 +6,12 @@ class MembershipApi {
   final ApiClient _api;
 
   Future<ApiEnvelope> mine() => _api.get('/me/membership');
+
+  Future<ApiEnvelope> packageTypes() => _api.get('/package-types');
+
+  Future<ApiEnvelope> requestRenewal(String packageTypeId, String? note) =>
+      _api.post('/me/renewal-requests', body: <String, dynamic>{
+        'packageTypeId': packageTypeId,
+        if (note != null) 'note': note,
+      });
 }

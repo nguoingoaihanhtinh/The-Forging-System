@@ -13,24 +13,11 @@ import 'package:hvp_forging/core/widgets/hvp_button.dart';
 import 'package:hvp_forging/core/widgets/shimmer_box.dart';
 import 'package:hvp_forging/features/auth/presentation/providers/auth_controller.dart';
 import 'package:hvp_forging/features/membership/domain/membership_models.dart';
-import 'package:hvp_forging/features/membership/domain/membership_repository.dart';
 import 'package:hvp_forging/features/membership/presentation/providers/membership_providers.dart';
 import 'package:hvp_forging/features/membership/presentation/screens/membership_screen.dart';
 
+import '../../helpers/fake_membership_repository.dart';
 import '../../helpers/test_harness.dart';
-
-class _FakeRepo implements MembershipRepository {
-  _FakeRepo(this.result);
-
-  final Future<MyMembership> Function() result;
-  int calls = 0;
-
-  @override
-  Future<MyMembership> getMyMembership() {
-    calls++;
-    return result();
-  }
-}
 
 const _current = MemberPackage(
   id: 'c',
@@ -54,9 +41,9 @@ const _queued = MemberPackage(
   totalSessions: 36,
 );
 
-Future<_FakeRepo> _pump(
+Future<FakeMembershipRepository> _pump(
     WidgetTester tester, Future<MyMembership> Function() result) async {
-  final repo = _FakeRepo(result);
+  final repo = FakeMembershipRepository(result);
   await pumpHvp(
     tester,
     const MembershipScreen(),
@@ -91,8 +78,8 @@ void main() {
       tester,
       const MembershipScreen(),
       overrides: <Override>[
-        membershipRepositoryProvider
-            .overrideWithValue(_FakeRepo(() => completer.future)),
+        membershipRepositoryProvider.overrideWithValue(
+            FakeMembershipRepository(() => completer.future)),
         currentUserIdProvider.overrideWithValue('u1'),
       ],
     );
@@ -112,7 +99,7 @@ void main() {
     fail = false;
     await tester.tap(find.byType(HvpButton));
     await tester.pumpAndSettle();
-    expect(repo.calls, 2);
+    expect(repo.membershipCalls, 2);
     expect(find.byType(EmptyState), findsOneWidget);
   });
 

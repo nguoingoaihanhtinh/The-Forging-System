@@ -23,6 +23,7 @@ MemberPackage _pkg({
 
 void main() {
   _bannerTests();
+  _renewalRuleTests();
   test('sessionsLabel for limited and unlimited packages', () {
     expect(sessionsLabel(_pkg()), '30/36 buổi đã dùng · còn 6');
     expect(sessionsLabel(_pkg(remaining: null)), '30/36 buổi đã dùng · còn 6');
@@ -104,4 +105,40 @@ extension on MemberPackage {
         daysRemaining: days,
         endingSoon: endingSoon,
       );
+}
+
+void _renewalRuleTests() {
+  MyMembership m(RenewNotice n, {bool early = false, bool pending = false}) =>
+      MyMembership(
+        memberStatus: MemberStatus.active,
+        renewNotice: n,
+        canRenewEarly: early,
+        pendingRenewal: pending
+            ? const PendingRenewal(packageName: 'x', createdAt: null)
+            : null,
+      );
+
+  test('canRequestRenewal follows the API rule', () {
+    expect(canRequestRenewal(m(RenewNotice.ok)), isFalse);
+    expect(canRequestRenewal(m(RenewNotice.ok, early: true)), isTrue);
+    expect(canRequestRenewal(m(RenewNotice.endingSoon)), isTrue);
+    expect(canRequestRenewal(m(RenewNotice.noPackage)), isTrue);
+    expect(canRequestRenewal(m(RenewNotice.ended, pending: true)), isFalse);
+  });
+
+  test('price and summary labels', () {
+    expect(priceLabel(8900000), '8.900.000đ');
+    expect(priceLabel(null), 'Chưa có giá');
+    expect(
+        packageSummary(const PackageType(
+            id: 'a',
+            name: 'a',
+            isTrial: false,
+            durationDays: 84,
+            totalSessions: 36)),
+        '84 ngày · 36 buổi');
+    expect(
+        packageSummary(const PackageType(id: 'a', name: 'a', isTrial: false)),
+        'Không giới hạn ngày · Không giới hạn buổi');
+  });
 }

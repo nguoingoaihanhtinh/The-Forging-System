@@ -109,3 +109,21 @@ MembershipBannerData? membershipBanner(MyMembership m,
       return null;
   }
 }
+
+/// "Nút Gia hạn" rule of docs/api/memberships.md: enabled unless the package
+/// is fine and not renewable early, or a request is already pending.
+bool canRequestRenewal(MyMembership m) =>
+    (m.renewNotice != RenewNotice.ok || m.canRenewEarly) &&
+    m.pendingRenewal == null;
+
+/// `8.900.000đ`, or a placeholder while the package has no price.
+String priceLabel(int? priceVnd) =>
+    priceVnd == null ? 'Chưa có giá' : '${formatInt(priceVnd)}đ';
+
+/// `84 ngày · 36 buổi` / `Không giới hạn ngày · Không giới hạn buổi`.
+String packageSummary(PackageType p) {
+  final days = p.durationDays;
+  final sessions = p.totalSessions;
+  return '${days == null ? 'Không giới hạn ngày' : '$days ngày'} · '
+      '${sessions == null ? 'Không giới hạn buổi' : '$sessions buổi'}';
+}

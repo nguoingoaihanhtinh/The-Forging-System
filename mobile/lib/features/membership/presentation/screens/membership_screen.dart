@@ -5,6 +5,7 @@ import '../../../../core/design/hvp_icons.dart';
 import '../../../../core/widgets/async_body.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/hvp_app_bar.dart';
+import '../../../../core/widgets/hvp_button.dart';
 import '../../../../core/widgets/hvp_refresh.dart';
 import '../../../../core/widgets/section_header.dart';
 import '../../../../core/widgets/status_chip.dart';
@@ -13,6 +14,7 @@ import '../../domain/membership_rules.dart';
 import '../providers/membership_providers.dart';
 import '../widgets/membership_banner.dart';
 import '../widgets/package_cards.dart';
+import '../widgets/renewal_sheet.dart';
 
 /// "Gói tập của tôi": account status, current / queued package, pending request.
 class MembershipScreen extends ConsumerWidget {
@@ -46,13 +48,17 @@ class _Body extends StatelessWidget {
     final scheduled = m.scheduled;
     final pending = m.pendingRenewal;
     final noPackage = m.renewNotice == RenewNotice.noPackage;
+    final canRenew = canRequestRenewal(m);
+    final hasBanner = membershipBanner(m, showNoPackage: false) != null;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: <Widget>[
-        const MembershipBanner(onAction: null, showNoPackage: false),
-        if (membershipBanner(m, showNoPackage: false) != null)
-          const SizedBox(height: 12),
+        MembershipBanner(
+          onAction: canRenew ? () => showRenewalSheet(context) : null,
+          showNoPackage: false,
+        ),
+        if (hasBanner) const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerLeft,
           child: StatusChip(
@@ -83,6 +89,15 @@ class _Body extends StatelessWidget {
         if (pending != null) ...<Widget>[
           const SectionHeader(title: 'Yêu cầu gia hạn'),
           PendingRenewalCard(renewal: pending),
+        ],
+        // The banner carries the CTA when it shows; otherwise offer it here.
+        if (!hasBanner) ...<Widget>[
+          const SizedBox(height: 16),
+          HvpButton.gold(
+            label: 'Gia hạn gói tập',
+            expand: true,
+            onPressed: canRenew ? () => showRenewalSheet(context) : null,
+          ),
         ],
       ],
     );

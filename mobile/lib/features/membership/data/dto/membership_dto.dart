@@ -36,3 +36,12 @@ MyMembership myMembershipFromJson(JsonMap j) => MyMembership(
       renewNotice: RenewNotice.parse(strOrNull(j, 'renewNotice')),
       canRenewEarly: boolOf(j, 'canRenewEarly'),
     );
+
+PackageType packageTypeFromJson(JsonMap j) => PackageType(
+      id: str(j, 'id'),
+      name: str(j, 'name'),
+      isTrial: boolOf(j, 'isTrial'),
+      durationDays: _intOrNull(j, 'durationDays'),
+      totalSessions: _intOrNull(j, 'totalSessions'),
+      priceVnd: _intOrNull(j, 'priceVnd'),
+    );

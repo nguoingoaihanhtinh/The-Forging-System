@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hvp_forging/core/config/app_config.dart';
+import 'package:hvp_forging/core/error/api_exception.dart';
 import 'package:hvp_forging/core/network/api_client.dart';
 import 'package:hvp_forging/core/network/dio_factory.dart';
 import 'package:hvp_forging/core/storage/token_store.dart';
@@ -94,5 +95,55 @@ void main() {
     expect(m.pendingRenewal, isNull);
     expect(m.memberStatus, MemberStatus.frozen);
     expect(m.renewNotice, RenewNotice.noPackage);
+  });
+
+  test('lists package types, keeping null limits and price', () async {
+    final t = _build((o) => okEnvelope(<dynamic>[
+          <String, dynamic>{
+            'id': 'p1',
+            'name': 'BOOK I',
+            'isTrial': false,
+            'durationDays': 84,
+            'totalSessions': 36,
+            'priceVnd': 8900000,
+          },
+          <String, dynamic>{
+            'id': 'p2',
+            'name': 'Trial',
+            'isTrial': true,
+            'durationDays': null,
+            'totalSessions': null,
+            'priceVnd': null,
+          },
+        ]));
+    final list = await t.repo.listPackageTypes();
+    expect(t.adapter.requests.single.path, '/package-types');
+    expect(list.first.priceVnd, 8900000);
+    expect(list.last.isTrial, isTrue);
+    expect(list.last.durationDays, isNull);
+    expect(list.last.priceVnd, isNull);
+  });
+
+  test('requestRenewal posts the trimmed note, or omits an empty one',
+      () async {
+    final t = _build((o) => okEnvelope(<String, dynamic>{}, status: 201));
+    await t.repo.requestRenewal(packageTypeId: 'p1', note: '  hi ');
+    await t.repo.requestRenewal(packageTypeId: 'p1', note: '   ');
+    expect(t.adapter.requests.first.path, '/me/renewal-requests');
+    expect(t.adapter.requests.first.method, 'POST');
+    expect(t.adapter.requests.first.data,
+        <String, dynamic>{'packageTypeId': 'p1', 'note': 'hi'});
+    expect(
+        t.adapter.requests.last.data, <String, dynamic>{'packageTypeId': 'p1'});
+  });
+
+  test('a 409 surfaces the API message', () async {
+    final t = _build((o) => errorEnvelope(409, 'RENEWAL_PENDING_EXISTS',
+        'Bạn đã có một yêu cầu gia hạn đang chờ xử lý. Lễ tân sẽ xử lý sớm.'));
+    await expectLater(
+      t.repo.requestRenewal(packageTypeId: 'p1'),
+      throwsA(isA<ApiException>().having(
+          (e) => e.message, 'message', startsWith('Bạn đã có một yêu cầu'))),
+    );
   });
 }
