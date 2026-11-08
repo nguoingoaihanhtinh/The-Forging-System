@@ -119,11 +119,13 @@ describe('CHL-06 evidence and coach approval', () => {
   const audit = { record: vi.fn() };
   const points = { award: vi.fn(), reverseByKey: vi.fn() };
   const settings = { getNumber: vi.fn() };
+  const notifier = { notifyMember: vi.fn(), notifyFromTemplate: vi.fn(), notifyStaff: vi.fn() };
   const service = new ChallengeService(
     repo as unknown as ChallengeRepository,
     audit as unknown as AuditService,
     points,
     settings as never,
+    notifier,
   );
   const awaiting = {
     ...participation,
@@ -159,6 +161,7 @@ describe('CHL-06 evidence and coach approval', () => {
     const url = `${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/files/challenges/proof.jpg`;
     repo.findParticipation.mockResolvedValue(awaiting);
     repo.attachEvidence.mockResolvedValue({ ...awaiting, evidenceUrl: url, evidenceAt: new Date() });
+    repo.find.mockResolvedValue(challenge);
 
     const result = await service.submitEvidence(event.memberId, awaiting.challengeId, { evidenceUrl: url });
 
@@ -166,6 +169,12 @@ describe('CHL-06 evidence and coach approval', () => {
     expect(repo.attachEvidence).toHaveBeenCalledWith(awaiting.id, url, expect.any(Date));
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'CHALLENGE_EVIDENCE_SUBMITTED' }),
+    );
+    expect(notifier.notifyStaff).toHaveBeenCalledWith(
+      'COACH',
+      'CHALLENGE_EVIDENCE',
+      'BẰNG CHỨNG CHALLENGE MỚI',
+      expect.stringContaining(challenge.title),
     );
   });
 

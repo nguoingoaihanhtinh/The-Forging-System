@@ -12,6 +12,7 @@ Chỉ `ADMIN` / `SUPER_ADMIN`.
 | PATCH | `/admin/challenges/:challengeId` | Sửa Challenge, yêu cầu `reason` |
 | GET | `/admin/challenges` | Danh sách/search/filter/phân trang |
 | GET | `/admin/challenges/:challengeId` | Chi tiết Challenge |
+| PATCH | `/admin/challenges/:challengeId/status` | Mở/đóng Challenge, yêu cầu `enabled` và `reason` |
 
 Challenge dùng `code`, `title`, `description`, `challengeType`, `context`, `target`, `rewardDp`, `rewardMarks`, `startsAt`, `endsAt`. `status`, actor và tenant luôn do server quản lý. Khi đã có participation, không thể sửa điều kiện, phần thưởng hoặc thời hạn; chỉ được sửa metadata. Các mutation ghi audit `CHALLENGE_CREATED` / `CHALLENGE_UPDATED`.
 
@@ -47,7 +48,7 @@ Chỉ trả Challenge `OPEN`, chưa hết hạn; sắp xếp `endsAt ASC, id DES
 | POST | `/me/challenges/:challengeId/join` |
 | POST | `/challenges/:challengeId/join` |
 
-Không có request body. Challenge phải tồn tại, `OPEN`, trong thời gian `[startsAt, endsAt)` và member chưa tham gia. Thành công trả `201` participation có `status: JOINED`, `progressValue: 0`. Join được audit `CHALLENGE_JOINED`, không phát DP/Marks và không tự tăng progress.
+Không có request body. Challenge phải tồn tại, `OPEN`, trong thời gian `[startsAt, endsAt)` và member chưa tham gia. Thành công trả `201` participation có `status: JOINED`, `progressValue: 0`. Join được audit `CHALLENGE_JOINED`, gửi notification `CHALLENGE_JOINED` cho member, không phát DP/Marks và không tự tăng progress.
 
 | HTTP | Code | Tình huống |
 |---|---|---|
@@ -73,6 +74,7 @@ CHL-05 không mở public HTTP endpoint. Tiến độ được cập nhật tron
 - Khi chạm `target`, participation chuyển `JOINED → AWAITING_COACH` và ghi `completedAt`.
 - Chưa nộp bằng chứng, chưa có coach quyết định, không phát DP/Marks trong CHL-05. Các việc này thuộc CHL-06.
 - Mỗi lần tăng tiến độ/đạt mục tiêu được ghi audit với nguồn `ATTENDANCE_CONFIRMED` và `attendanceId`.
+- Khi đạt mục tiêu, member nhận notification `CHALLENGE_COMPLETED` để nộp bằng chứng.
 
 ### Tích hợp attendance
 
@@ -98,6 +100,8 @@ Nộp bằng chứng:
 - Duyệt chuyển `AWAITING_COACH → REWARDED`, ghi Coach/thời điểm và phát reward snapshot `rewardDp`/`rewardMarks` qua ledger với idempotency key theo participation.
 - Khi member đã đạt `challenge.monthly_reward_limit` trong tháng, participation vẫn `REWARDED` nhưng `isLimited=true` và không phát DP/Marks.
 - Audit: `CHALLENGE_EVIDENCE_SUBMITTED`, `CHALLENGE_APPROVED` hoặc `CHALLENGE_APPROVED_LIMITED`.
+- Ngay sau khi evidence được lưu, backend ghi notification role `COACH` với event `CHALLENGE_EVIDENCE`; Coach duyệt tại tab Challenge.
+- Khi Coach duyệt, member nhận notification `CHALLENGE_REWARDED`, kể cả khi đã chạm giới hạn thưởng tháng.
 
 Hàng chờ duyệt của Coach:
 
@@ -110,8 +114,8 @@ GET /api/v1/staff/challenges/participations?status=AWAITING_COACH&evidence=SUBMI
 
 UI:
 
-- Member: thẻ Challenge `AWAITING_COACH` hiện nút **Nộp bằng chứng**, mở bottom sheet chọn/upload ảnh qua `EvidencePhotoPicker` rồi gọi `POST /me/challenges/:challengeId/evidence`.
-- Coach: tab **Challenge** tại `/coach/challenge` gọi danh sách trên, hiển thị ảnh minh chứng và nút **Duyệt và phát thưởng** (xác nhận trước khi gọi API approve).
+- Member: thẻ Challenge chưa tham gia có nút **Tham gia thử thách**; thẻ `AWAITING_COACH` hiện nút **Nộp bằng chứng**, mở bottom sheet chọn/upload ảnh qua `EvidencePhotoPicker` rồi gọi `POST /me/challenges/:challengeId/evidence`.
+- Coach: tab **Challenge** tại `/coach/challenge` hỗ trợ tìm kiếm, lọc status/evidence, phân trang, hiển thị ảnh minh chứng và nút **Duyệt và phát thưởng** (xác nhận trước khi gọi API approve).
 
 Mã nguồn:
 
@@ -136,7 +140,7 @@ Màn **Thử thách** tại `/student/challenges` hiển thị Challenge đang m
 - Lọc tất cả, hằng ngày, hằng tuần, hằng tháng và sự kiện.
 - Hiển thị mục tiêu, phần thưởng DP/Marks, thời điểm kết thúc và trạng thái tham gia.
 - Hỗ trợ pull-to-refresh, retry và phân trang.
-- Chỉ đọc danh sách/trạng thái; thao tác tham gia thuộc CHL-04.
+- Card chưa tham gia hiện CTA **Tham gia thử thách** gọi CHL-04; sau thành công danh sách được refresh.
 
 Mã nguồn:
 
@@ -160,3 +164,21 @@ Mã nguồn:
 - `mobile/lib/features/challenges/data/current_challenge_repository.dart`
 - `mobile/lib/features/challenges/presentation/current_challenge_providers.dart`
 - `mobile/lib/features/challenges/presentation/current_challenges_screen.dart`
+
+## Notification contract và Definition of Done
+
+Mọi mutation Challenge mới hoặc thay đổi phải cập nhật cùng lúc backend event, recipient, mobile route và test. Không được chỉ thêm event constant hoặc UI mà không có trigger thật.
+
+| Action | Audit | Notification | Recipient | Khi mở notification |
+|---|---|---|---|---|
+| Member join | `CHALLENGE_JOINED` | `CHALLENGE_JOINED` | Member thực hiện join | `/student/challenges/current` |
+| Attendance đạt mục tiêu | `CHALLENGE_TARGET_REACHED` | `CHALLENGE_COMPLETED` | Member | `/student/challenges/current` |
+| Member nộp/sửa evidence | `CHALLENGE_EVIDENCE_SUBMITTED` | `CHALLENGE_EVIDENCE` | Inbox role `COACH` | Queue `/coach/challenge`; mobile staff inbox/push chưa có |
+| Coach duyệt reward | `CHALLENGE_APPROVED` / `_LIMITED` | `CHALLENGE_REWARDED` | Member | `/student/challenges/current` |
+| Admin mở/đóng Challenge | `CHALLENGE_ENABLED` / `_DISABLED` | Chưa gửi | Không áp dụng | Không áp dụng |
+
+`CHALLENGE_COMPLETED` chỉ có hiệu lực khi module attendance emit `DomainEvents.ATTENDANCE_CONFIRMED`; listener Challenge đã đăng ký nhưng attendance phải là producer của event này.
+
+Thông báo mở/đóng Challenge **không được tự ý broadcast**: cần product decision về audience (toàn bộ member, theo branch, hay chỉ participant) và backend query/notification primitive tương ứng. Khi được chốt, implementation phải bổ sung một hàng trong bảng trên, route mobile và test recipient/deduplication.
+
+`GET /staff/notifications` và `POST /staff/notifications/read-all` đã tồn tại ở backend, nhưng mobile hiện chưa có staff inbox/bell hoặc push delivery theo role. Đây là phạm vi bắt buộc phải hoàn thiện trước khi coi `CHALLENGE_EVIDENCE` là notification hiển thị chủ động cho Coach; hiện event vẫn được lưu đúng role và queue Challenge đã là nơi xử lý tương ứng.
