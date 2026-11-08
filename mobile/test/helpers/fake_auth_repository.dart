@@ -12,6 +12,8 @@ class FakeAuthRepository implements AuthRepository {
   ApiException? loginError;
 
   final List<String> loginIdentifiers = <String>[];
+  final List<String> otpPhones = <String>[];
+  final List<RegisterInput> registered = <RegisterInput>[];
   int logoutCalls = 0;
 
   @override
@@ -24,8 +26,17 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<AuthUser> register(RegisterInput input) async =>
-      loginUser ?? makeUser(AppRole.student);
+  Future<AuthUser> register(RegisterInput input) async {
+    registered.add(input);
+    return loginUser ?? makeUser(AppRole.student);
+  }
+
+  @override
+  Future<OtpTicket> requestRegisterOtp(String phone) async {
+    otpPhones.add(phone);
+    return const OtpTicket(
+        requestId: 'otp-1', maskedDestination: '091****678', devPin: '123456');
+  }
 
   @override
   Future<AuthUser?> restoreSession() async => restored;
@@ -43,9 +54,8 @@ class FakeAuthRepository implements AuthRepository {
   }) async {}
 
   @override
-  Future<PasswordResetTicket> requestPasswordReset(String phone) async =>
-      const PasswordResetTicket(
-          requestId: 'req-1', maskedDestination: '091****678');
+  Future<OtpTicket> requestPasswordReset(String phone) async =>
+      const OtpTicket(requestId: 'req-1', maskedDestination: '091****678');
 
   @override
   Future<String> verifyResetPin(

@@ -33,7 +33,25 @@ const schema = z.object({
   // FCM credentials (PUSH_PROVIDER=fcm): the service-account JSON itself, or the path of its file.
   FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
   GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
-  OTP_PROVIDER: z.enum(['console', 'smtp']).default('console'),
+  OTP_PROVIDER: z.enum(['console', 'esms']).default('console'),
+  ESMS_API_KEY: z.string().optional(),
+  ESMS_SECRET_KEY: z.string().optional(),
+  /** Sender name registered with eSMS (and the carriers), e.g. `HVP`. */
+  ESMS_BRANDNAME: z.string().optional(),
+  /** Zalo Official Account linked in eSMS; OTP goes by Zalo ZNS first, SMS as fallback. */
+  ESMS_ZALO_OA_ID: z.string().optional(),
+  /** Approved ZNS OTP template (single `otp` param). */
+  ESMS_ZALO_TEMPLATE_ID: z.string().optional(),
+  /** `true`: eSMS validates the request but sends and charges nothing. */
+  ESMS_SANDBOX: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+}).superRefine((v, ctx) => {
+  if (v.OTP_PROVIDER !== 'esms') return;
+  for (const key of ['ESMS_API_KEY', 'ESMS_SECRET_KEY', 'ESMS_BRANDNAME', 'ESMS_ZALO_OA_ID', 'ESMS_ZALO_TEMPLATE_ID'] as const) {
+    if (!v[key]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: 'required when OTP_PROVIDER=esms' });
+  }
 });
 
 export type Env = z.infer<typeof schema>;

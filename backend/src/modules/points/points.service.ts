@@ -36,6 +36,8 @@ export interface AwardResult {
 /** Port other modules depend on to touch the ledger (never write point_transactions directly). */
 export interface PointsPort {
   award(input: AwardInput): Promise<AwardResult>;
+  /** Reverses the transaction posted under `idempotencyKey`; false when none exists. Throws NEGATIVE_BALANCE if spent. */
+  reverseByKey(idempotencyKey: string, reason: string, by: string): Promise<boolean>;
 }
 
 /** Armory uses this while holding the tenant transaction used to create its pending redemption. */
@@ -349,6 +351,13 @@ export class PointsService implements PointsPort, MarksWalletPort {
       source: 'REVERSAL',
     } satisfies PointsAwardedEvent);
     return tx!;
+  }
+
+  async reverseByKey(idempotencyKey: string, reason: string, by: string): Promise<boolean> {
+    const original = await this.repo.findByIdempotencyKey(`${db.currentTenantId()}:${idempotencyKey}`);
+    if (!original) return false;
+    await this.reverse({ transactionId: original.id, reason, by });
+    return true;
   }
 
   async listForMember(memberId: string, filter: { source?: string }, limit: number, offset: number) {
