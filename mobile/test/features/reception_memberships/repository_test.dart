@@ -101,4 +101,19 @@ void main() {
           'paymentEvidenceUrl': 'http://x/files/a.jpg'
         });
   });
+
+  test(
+      'MEM-17 createMember posts name and phone and reads the one-time password',
+      () async {
+    boot(<String, Reply>{
+      'POST /members': (_) => okEnvelope(
+          <String, dynamic>{'userId': 'u1', 'temporaryPassword': 'abc12a1'},
+          status: 201),
+    });
+    final created =
+        await repo.createMember(fullName: 'Lê Mới', phone: '0912345678');
+    expect([created.id, created.temporaryPassword], ['u1', 'abc12a1']);
+    expect(desk.calls('POST /members').single.data,
+        <String, dynamic>{'fullName': 'Lê Mới', 'phone': '0912345678'});
+  });
 }

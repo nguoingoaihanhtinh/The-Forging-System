@@ -26,4 +26,8 @@ abstract interface class ReceptionMembershipsRepository {
   /// `POST /members/:memberId/memberships`. Returns the message to show.
   Future<String> activateMembership(String memberId,
       {required String packageTypeId, required String evidenceUrl});
+
+  /// `POST /members`
+  Future<CreatedMember> createMember(
+      {required String fullName, required String phone});
 }

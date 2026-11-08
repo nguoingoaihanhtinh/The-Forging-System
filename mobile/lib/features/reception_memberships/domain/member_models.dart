@@ -38,3 +38,11 @@ class MemberOverview {
   final MemberProfile profile;
   final MyMembership membership;
 }
+
+/// A learner just created at the desk; the password is shown once.
+class CreatedMember {
+  const CreatedMember({required this.id, this.temporaryPassword});
+
+  final String id;
+  final String? temporaryPassword;
+}

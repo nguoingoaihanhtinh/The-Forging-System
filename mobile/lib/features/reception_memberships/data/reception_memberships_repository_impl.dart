@@ -65,4 +65,9 @@ class ReceptionMembershipsRepositoryImpl
           (await _api.activateMembership(memberId, packageTypeId, evidenceUrl))
               .dataMap,
           'message');
+
+  @override
+  Future<CreatedMember> createMember(
+          {required String fullName, required String phone}) async =>
+      createdMemberFromJson((await _api.createMember(fullName, phone)).dataMap);
 }

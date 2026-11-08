@@ -10,9 +10,11 @@ import '../../../../core/design/hvp_icons.dart';
 import '../../../../core/design/hvp_layout.dart';
 import '../../../../core/widgets/async_body.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/hvp_button.dart';
 import '../../../../core/widgets/hvp_text_field.dart';
 import '../../../reception_checkin/domain/member_hit.dart';
 import '../../../reception_checkin/presentation/reception_providers.dart';
+import '../widgets/create_member_sheet.dart';
 import '../widgets/member_row.dart';
 
 /// "Học viên" tab: find a learner by name or phone and open their detail.
@@ -44,12 +46,30 @@ class _MembersTabState extends ConsumerState<MembersTab> {
     });
   }
 
+  Future<void> _create() async {
+    final id = await showCreateMemberSheet(context);
+    if (id != null && mounted) {
+      await context.push(ReceptionPaths.membershipMember(id));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.txt;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: HvpButton.secondary(
+                label: 'Tạo học viên mới',
+                icon: HvpIcons.plus,
+                small: true,
+                onPressed: _create),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: HvpTextField(

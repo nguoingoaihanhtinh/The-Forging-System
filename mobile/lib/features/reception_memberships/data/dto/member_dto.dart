@@ -13,3 +13,6 @@ MemberProfile memberProfileFromJson(JsonMap j) => MemberProfile(
       joinedAt: dateOrNull(j, 'joinedAt'),
       homeBranchName: strOrNull(j, 'homeBranchName'),
     );
+
+CreatedMember createdMemberFromJson(JsonMap j) => CreatedMember(
+    id: str(j, 'userId'), temporaryPassword: strOrNull(j, 'temporaryPassword'));

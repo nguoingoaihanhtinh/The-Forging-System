@@ -43,4 +43,8 @@ class ReceptionMembershipsApi {
         'packageTypeId': packageTypeId,
         'paymentEvidenceUrl': evidenceUrl
       });
+
+  Future<ApiEnvelope> createMember(String fullName, String phone) =>
+      _api.post('/members',
+          body: <String, dynamic>{'fullName': fullName, 'phone': phone});
 }

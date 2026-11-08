@@ -5,6 +5,7 @@ import '../../../core/network/network_providers.dart';
 import '../../../core/widgets/evidence_photo_picker.dart';
 import '../data/reception_memberships_api.dart';
 import '../data/reception_memberships_repository_impl.dart';
+import '../../../core/state/submit_notifier.dart';
 import '../../auth/presentation/providers/auth_controller.dart';
 import '../domain/member_models.dart';
 import '../domain/package_type.dart';
@@ -44,3 +45,7 @@ final packageTypesProvider =
   ref.watch(currentUserIdProvider);
   return ref.watch(receptionMembershipsRepositoryProvider).packageTypes();
 });
+
+/// State of the "create learner" form.
+final createMemberSubmitProvider =
+    NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
