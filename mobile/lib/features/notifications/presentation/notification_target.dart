@@ -21,6 +21,7 @@ NotificationTarget? notificationTarget(String eventType) {
   }
   if (const <String>{
     'CHALLENGE_JOINED',
+    'CHALLENGE_JOIN_APPROVED',
     'CHALLENGE_COMPLETED',
     'CHALLENGE_REWARDED',
   }.contains(eventType)) {

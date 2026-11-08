@@ -111,7 +111,8 @@ describe('CHL-06 evidence and coach approval', () => {
     findParticipation: vi.fn(),
     findParticipationById: vi.fn(),
     find: vi.fn(),
-    attachEvidence: vi.fn(),
+    submitCompletionEvidence: vi.fn(),
+    approveJoin: vi.fn(),
     lockMember: vi.fn(),
     rewardedThisMonth: vi.fn(),
     approveParticipation: vi.fn(),
@@ -157,16 +158,17 @@ describe('CHL-06 evidence and coach approval', () => {
     resetClock();
   });
 
-  it('allows the member to attach a stored-file proof only while awaiting review', async () => {
+  it('allows a Coach-approved member to request completion with a stored-file proof', async () => {
     const url = `${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/files/challenges/proof.jpg`;
-    repo.findParticipation.mockResolvedValue(awaiting);
-    repo.attachEvidence.mockResolvedValue({ ...awaiting, evidenceUrl: url, evidenceAt: new Date() });
+    const joined = { ...awaiting, status: 'JOINED' as const };
+    repo.findParticipation.mockResolvedValue(joined);
+    repo.submitCompletionEvidence.mockResolvedValue({ ...awaiting, evidenceUrl: url, evidenceAt: new Date() });
     repo.find.mockResolvedValue(challenge);
 
     const result = await service.submitEvidence(event.memberId, awaiting.challengeId, { evidenceUrl: url });
 
     expect(result.evidenceUrl).toBe(url);
-    expect(repo.attachEvidence).toHaveBeenCalledWith(awaiting.id, url, expect.any(Date));
+    expect(repo.submitCompletionEvidence).toHaveBeenCalledWith(awaiting.id, url, expect.any(Date));
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'CHALLENGE_EVIDENCE_SUBMITTED' }),
     );
@@ -178,19 +180,33 @@ describe('CHL-06 evidence and coach approval', () => {
     );
   });
 
-  it('rejects proof before target completion and off-platform URLs', async () => {
+  it('rejects proof before Coach approves joining and off-platform URLs', async () => {
+    repo.findParticipation.mockResolvedValue({ ...awaiting, status: 'PENDING_COACH' });
+    await expect(
+      service.submitEvidence(event.memberId, awaiting.challengeId, {
+        evidenceUrl: 'https://outside.example/proof.jpg',
+      }),
+    ).rejects.toMatchObject({ code: 'CHALLENGE_NOT_JOINED' });
     repo.findParticipation.mockResolvedValue({ ...awaiting, status: 'JOINED' });
     await expect(
       service.submitEvidence(event.memberId, awaiting.challengeId, {
         evidenceUrl: 'https://outside.example/proof.jpg',
       }),
-    ).rejects.toMatchObject({ code: 'CHALLENGE_NOT_AWAITING_REVIEW' });
-    repo.findParticipation.mockResolvedValue(awaiting);
-    await expect(
-      service.submitEvidence(event.memberId, awaiting.challengeId, {
-        evidenceUrl: 'https://outside.example/proof.jpg',
-      }),
     ).rejects.toMatchObject({ code: 'INVALID_CHALLENGE_EVIDENCE' });
+  });
+
+  it('lets Coach approve a pending registration before evidence can be sent', async () => {
+    const pending = { ...awaiting, status: 'PENDING_COACH' as const };
+    const joined = { ...awaiting, status: 'JOINED' as const };
+    repo.findParticipationById.mockResolvedValue(pending);
+    repo.approveJoin.mockResolvedValue(joined);
+    repo.find.mockResolvedValue(challenge);
+
+    await expect(service.approveJoin(pending.id, event.confirmedBy)).resolves.toEqual(joined);
+    expect(repo.approveJoin).toHaveBeenCalledWith(pending.id, event.confirmedBy, expect.any(Date));
+    expect(notifier.notifyMember).toHaveBeenCalledWith(expect.objectContaining({
+      event: 'CHALLENGE_JOIN_APPROVED', userId: event.memberId,
+    }));
   });
 
   it('approves evidence once, awards configured points, and marks repeat approval duplicate', async () => {

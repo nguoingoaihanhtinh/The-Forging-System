@@ -35,6 +35,9 @@ class _FakeChallengeReviews implements ChallengeReviewRepository {
 
   @override
   Future<void> approve(String participationId) async => approved++;
+
+  @override
+  Future<void> approveJoin(String participationId) async => approved++;
 }
 
 void main() {

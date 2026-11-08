@@ -97,12 +97,46 @@ export class ChallengeService {
     await this.notifier?.notifyMember({
       userId: memberId,
       event: NotificationEvent.CHALLENGE_JOINED,
-      title: 'ĐÃ THAM GIA THỬ THÁCH',
-      body: `Bạn đã tham gia thử thách “${challenge.title}”. Hoàn thành ${challenge.target} lượt để nhận thưởng.`,
+      title: 'ĐÃ GỬI ĐĂNG KÝ THỬ THÁCH',
+      body: `Bạn đã đăng ký “${challenge.title}”. Chờ Coach duyệt tham gia.`,
       dedupeKey: `challenge:joined:${participation.id}`,
       payload: { challengeId: challenge.id, participationId: participation.id },
     });
+    await this.notifier?.notifyStaff(
+      'COACH',
+      NotificationEvent.CHALLENGE_EVIDENCE,
+      'ĐĂNG KÝ THỬ THÁCH MỚI',
+      `Có học viên đăng ký “${challenge.title}”. Mở tab Challenge để duyệt tham gia.`,
+    );
     return participation;
+  }
+
+  /** Coach accepts a member's Challenge registration before the member can submit completion evidence. */
+  async approveJoin(participationId: string, actorId: string): Promise<ChallengeParticipationView> {
+    const before = await this.repo.findParticipationById(participationId, true);
+    if (!before) throw notFound('Challenge participation');
+    if (before.status !== 'PENDING_COACH') {
+      throw conflict('Đăng ký thử thách không còn chờ Coach duyệt.', 'CHALLENGE_NOT_PENDING_JOIN');
+    }
+    const after = await this.repo.approveJoin(before.id, actorId, clock.now());
+    const challenge = await this.repo.find(before.challengeId);
+    await this.audit.record({
+      actorId,
+      action: 'CHALLENGE_JOIN_APPROVED',
+      entityType: 'CHALLENGE_PARTICIPATION',
+      entityId: after.id,
+      before,
+      after,
+    });
+    await this.notifier?.notifyMember({
+      userId: after.memberId,
+      event: NotificationEvent.CHALLENGE_JOIN_APPROVED,
+      title: 'ĐĂNG KÝ THỬ THÁCH ĐÃ ĐƯỢC DUYỆT',
+      body: `Coach đã duyệt “${challenge?.title ?? 'thử thách'}”. Khi hoàn thành, hãy gửi yêu cầu hoàn thành kèm bằng chứng.`,
+      dedupeKey: `challenge:join-approved:${after.id}`,
+      payload: { challengeId: after.challengeId, participationId: after.id },
+    });
+    return after;
   }
 
   /** CHL-05: advances joined challenges after a coach confirms attendance. */
@@ -143,7 +177,7 @@ export class ChallengeService {
     }
   }
 
-  /** CHL-06: member attaches proof after reaching the challenge target. */
+  /** Member requests completion by attaching proof after Coach approved their registration. */
   async submitEvidence(
     memberId: string,
     challengeId: string,
@@ -151,15 +185,15 @@ export class ChallengeService {
   ): Promise<ChallengeParticipationView> {
     const participation = await this.repo.findParticipation(challengeId, memberId, true);
     if (!participation) throw notFound('Challenge participation');
-    if (participation.status !== 'AWAITING_COACH') {
+    if (participation.status !== 'JOINED') {
       throw conflict(
-        'Chỉ nộp bằng chứng khi thử thách đang chờ Coach duyệt.',
-        'CHALLENGE_NOT_AWAITING_REVIEW',
+        'Chỉ gửi yêu cầu hoàn thành sau khi Coach duyệt đăng ký thử thách.',
+        'CHALLENGE_NOT_JOINED',
       );
     }
     const evidenceUrl = this.requireEvidence(input.evidenceUrl);
     if (participation.evidenceUrl === evidenceUrl) return participation;
-    const after = await this.repo.attachEvidence(participation.id, evidenceUrl, clock.now());
+    const after = await this.repo.submitCompletionEvidence(participation.id, evidenceUrl, clock.now());
     await this.audit.record({
       actorId: memberId,
       action: 'CHALLENGE_EVIDENCE_SUBMITTED',

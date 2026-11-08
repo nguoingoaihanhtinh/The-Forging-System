@@ -35,5 +35,6 @@ class ChallengeReviewPage {
 
 abstract interface class ChallengeReviewRepository {
   Future<ChallengeReviewPage> list({String? status, String? evidence, String? query, int page = 1});
+  Future<void> approveJoin(String participationId);
   Future<void> approve(String participationId);
 }

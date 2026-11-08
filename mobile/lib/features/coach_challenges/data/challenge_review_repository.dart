@@ -32,5 +32,9 @@ class ChallengeReviewRepositoryImpl implements ChallengeReviewRepository {
   }
 
   @override
+  Future<void> approveJoin(String participationId) =>
+      _api.post('/staff/challenges/participations/$participationId/approve-join');
+
+  @override
   Future<void> approve(String participationId) => _api.post('/staff/challenges/participations/$participationId/approve');
 }
