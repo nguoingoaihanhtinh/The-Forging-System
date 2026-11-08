@@ -170,6 +170,7 @@ export class RankService implements RankPort {
           ? `Khôi phục huy hiệu: đủ DP trở lại, không cần thi lại. (${reasonParts.join(', ')})`
           : `${reasonParts.join(', ')}.`,
         by: null,
+        monthsInFrom: progress.monthsIn,
       });
       current = next;
       if (next.rankOrder > peak.rankOrder) peak = next;
@@ -286,6 +287,7 @@ export class RankService implements RankPort {
       reason: `Vượt qua Rank Trial do ${input.byName} chấm${input.note ? ` - "${input.note}"` : ''}. Đủ ${fmt(target.dpThreshold)} DP${target.minActiveMonths ? `, ${target.minActiveMonths} tháng ở ${current.nameEn}` : ''}${target.requiredCourseIds.length ? `, khóa ${target.requiredCourseIds.map((id) => courseNames.get(id) ?? id).join(' + ')}` : ''}.`,
       by: input.by,
       trialId: trial.id,
+      monthsInFrom: progress.monthsIn,
     });
     await this.points.award({
       memberId: trial.memberId,
@@ -348,9 +350,17 @@ export class RankService implements RankPort {
     from: RankDef,
     to: RankDef,
     peak: RankDef,
-    opts: { via: 'AUTO_UPGRADE' | 'RESTORED' | 'RANK_TRIAL_PASSED'; reason: string; by: string | null; trialId?: string },
+    opts: {
+      via: 'AUTO_UPGRADE' | 'RESTORED' | 'RANK_TRIAL_PASSED';
+      reason: string;
+      by: string | null;
+      trialId?: string;
+      /** Months the member spent in `from` before this promotion. */
+      monthsInFrom: number;
+    },
   ): Promise<void> {
     const newPeak = peak.rankOrder >= to.rankOrder ? peak.id : to.id;
+    const monthsInFrom = Math.round(opts.monthsInFrom * 10) / 10;
     await this.repo.insertHistory({
       memberId: state.userId,
       fromRankId: from.id,
@@ -360,6 +370,7 @@ export class RankService implements RankPort {
       dpAtChange: state.dpBalance,
       trialId: opts.trialId,
       approvedBy: opts.by,
+      snapshot: { dp: state.dpBalance, fromRank: from.nameEn, monthsInFromRank: monthsInFrom },
     });
     await this.repo.setRanks(state.userId, to.id, newPeak);
     // Keep the in-memory snapshot coherent for the next loop iteration.
@@ -367,7 +378,10 @@ export class RankService implements RankPort {
     state.peakRankId = newPeak;
     await this.notifier.notifyFromTemplate(state.userId, NotificationEvent.RANK_EARNED, { rank: to.nameEn });
     const restoredLabel = opts.via === 'RESTORED' ? ' (khôi phục, không thi lại)' : '';
-    await this.notifier.notifyStaff('ADMIN', NotificationEvent.RANK_UP, 'LÊN HẠNG', `${state.fullName} đã đạt ${to.nameEn}${restoredLabel}.`);
+    // A restored rank skips the waiting period, so the time spent below it says nothing.
+    const standing =
+      opts.via === 'RESTORED' ? `DP ${fmt(state.dpBalance)}` : `DP ${fmt(state.dpBalance)}, ${monthsInFrom} tháng ở ${from.nameEn}`;
+    await this.notifier.notifyStaff('ADMIN', NotificationEvent.RANK_UP, 'LÊN HẠNG', `${state.fullName} đã đạt ${to.nameEn}${restoredLabel} (${standing}).`);
     await this.audit.record({
       actorId: opts.by,
       action: opts.via === 'RESTORED' ? 'RANK_RESTORED' : 'RANK_UPGRADED',

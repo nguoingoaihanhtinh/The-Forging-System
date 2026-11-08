@@ -30,6 +30,9 @@ const schema = z.object({
     .transform((v) => v === 'true'),
 
   PUSH_PROVIDER: z.enum(['console', 'fcm']).default('console'),
+  // FCM credentials (PUSH_PROVIDER=fcm): the service-account JSON itself, or the path of its file.
+  FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  GOOGLE_APPLICATION_CREDENTIALS: z.string().optional(),
   OTP_PROVIDER: z.enum(['console', 'smtp']).default('console'),
 });
 

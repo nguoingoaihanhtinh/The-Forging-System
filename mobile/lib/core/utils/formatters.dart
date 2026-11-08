@@ -37,6 +37,12 @@ String formatDate(DateTime instant) {
   return '${_two(d.day)}/${_two(d.month)}/${d.year}';
 }
 
+/// `14:30`
+String formatTime(DateTime instant) {
+  final d = toVietnamTime(instant);
+  return '${_two(d.hour)}:${_two(d.minute)}';
+}
+
 /// `05/10/2026 14:30`
 String formatDateTime(DateTime instant) {
   final d = toVietnamTime(instant);

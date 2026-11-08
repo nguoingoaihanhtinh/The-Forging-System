@@ -36,6 +36,7 @@ StatefulShellRoute roleShellRoute({
   required List<ShellTab> tabs,
   int? raisedIndex,
   bool accountInAppBar = true,
+  List<Widget> actions = const <Widget>[],
 }) {
   return StatefulShellRoute.indexedStack(
     builder: (context, state, navigationShell) => RoleShell(
@@ -44,6 +45,7 @@ StatefulShellRoute roleShellRoute({
       navigationShell: navigationShell,
       raisedIndex: raisedIndex,
       accountInAppBar: accountInAppBar,
+      actions: actions,
     ),
     branches: <StatefulShellBranch>[
       for (final tab in tabs)

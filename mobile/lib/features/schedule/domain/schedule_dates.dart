@@ -68,12 +68,6 @@ String weekRangeLabel(DateTime d) {
 DateTime shiftWeeks(DateTime d, int weeks) =>
     dateOnly(d).add(Duration(days: 7 * weeks));
 
-/// `HH:mm` in Vietnam time.
-String formatTime(DateTime instant) {
-  final v = toVietnamTime(instant);
-  return '${v.hour.toString().padLeft(2, '0')}:${v.minute.toString().padLeft(2, '0')}';
-}
-
 /// `18:00–19:30`.
 String formatTimeRange(DateTime start, DateTime end) =>
     '${formatTime(start)}–${formatTime(end)}';

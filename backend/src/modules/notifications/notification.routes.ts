@@ -29,8 +29,8 @@ export function notificationRoutes(service: NotificationService): Router {
   // ---- learner inbox (HV-06) ----
   r.get('/me/notifications', requireRoles(Role.MEMBER), validate({ query: paginationQuery }), handle(async (req) => {
     const page = toPage(req.query as unknown as { page: number; limit: number });
-    const { items, unread } = await service.listForMember(authOf(req).userId, page.limit, page.offset);
-    return ok(items, { ...pageMeta(page, items.length), unread });
+    const { items, unread, total } = await service.listForMember(authOf(req).userId, page.limit, page.offset);
+    return ok(items, { ...pageMeta(page, total), unread });
   }));
   r.get('/me/notifications/unread-count', requireRoles(Role.MEMBER), handle(async (req) =>
     ok({ unread: await service.unreadCountForMember(authOf(req).userId) }),

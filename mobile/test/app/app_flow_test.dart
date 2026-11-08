@@ -64,10 +64,12 @@ void main() {
   testWidgets('placeholder tabs keep working when switching', (tester) async {
     await _pumpApp(tester, FakeAuthRepository(restored: makeUser(AppRole.student)));
 
-    await tester.tap(_navLabel('Armory'));
+    await tester.tap(_navLabel('Hồ sơ'));
+    await tester.pumpAndSettle();
+    await tester.tap(_navLabel('Trang chủ'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Phụ trách: feature: armory'), findsOneWidget);
+    expect(find.text('Phụ trách: feature: student_home'), findsOneWidget);
   });
 
   const staffTabs = <AppRole, List<String>>{

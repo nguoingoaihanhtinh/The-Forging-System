@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Without INTERNET a release build cannot reach the API (debug and profile builds add it themselves). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Scans the check-in QR; devices without a camera can still install the app. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="hvp_forging"
         android:name="${applicationName}"

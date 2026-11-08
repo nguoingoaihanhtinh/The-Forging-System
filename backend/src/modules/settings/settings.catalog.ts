@@ -81,7 +81,7 @@ export const CONFIG_CATALOG: ConfigDefinition[] = [
   def('classes.session_horizon_days', 'CLASS', 'INT', 28, 'Sessions are generated from class schedules this many days ahead', { min: 7, max: 90 }),
 
   // ---- Check-in ----
-  def('checkin.code_ttl_seconds', 'CHECKIN', 'INT', 60, 'Lifetime of a rotating branch check-in code', { min: 10 }),
+  def('checkin.code_ttl_seconds', 'CHECKIN', 'INT', 30, 'Lifetime of a rotating branch check-in code', { min: 10 }),
   def('checkin.opens_before_minutes', 'CHECKIN', 'INT', 45, 'Check-in opens this many minutes before a session starts', { min: 0 }),
   def('checkin.closes_after_minutes', 'CHECKIN', 'INT', 30, 'Check-in stays open this many minutes after a session starts', { min: 0 }),
   def('checkin.geofence_enabled', 'CHECKIN', 'BOOL', false, 'Reject check-ins made outside the branch geofence'),
