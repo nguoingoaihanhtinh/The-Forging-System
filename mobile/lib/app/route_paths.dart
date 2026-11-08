@@ -105,6 +105,8 @@ abstract final class AdminPaths {
   static const String challenges = '/admin/challenges';
   static const String notifications = '/admin/notifications';
   static const String settings = '/admin/settings';
+  static const String classDetailPattern = '/admin/training/classes/:id';
+  static String classDetail(String id) => '/admin/training/classes/$id';
 
   // Pushed screens
   static const String branches = '/admin/settings/branches';
