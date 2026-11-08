@@ -7,6 +7,7 @@ import '../data/reception_memberships_api.dart';
 import '../data/reception_memberships_repository_impl.dart';
 import '../../../core/state/submit_notifier.dart';
 import '../../auth/presentation/providers/auth_controller.dart';
+import '../../reception_checkin/domain/member_hit.dart';
 import '../domain/member_models.dart';
 import '../domain/package_type.dart';
 import '../domain/reception_memberships_repository.dart';
@@ -49,3 +50,10 @@ final packageTypesProvider =
 /// State of the "create learner" form.
 final createMemberSubmitProvider =
     NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+/// Other accounts sharing a learner's phone or email.
+final duplicatesProvider =
+    FutureProvider.autoDispose.family<List<MemberHit>, String>((ref, memberId) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(receptionMembershipsRepositoryProvider).duplicates(memberId);
+});

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../app/route_paths.dart';
 
 import '../../../../core/design/hvp_context.dart';
 import '../../../../core/design/hvp_icons.dart';
@@ -13,6 +16,7 @@ import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../membership/domain/membership_models.dart';
 import '../../domain/member_models.dart';
 import '../../domain/member_rules.dart';
+import '../../../reception_checkin/domain/member_hit.dart';
 import '../member_actions.dart';
 import '../reception_memberships_providers.dart';
 import '../widgets/member_header_card.dart';
@@ -81,6 +85,7 @@ class MemberDetailScreen extends ConsumerWidget {
                         status: next),
                   ),
                 ],
+                _DuplicatesBanner(profile: overview.profile),
                 if (membership.pendingRenewal != null) ...<Widget>[
                   const SizedBox(height: 12),
                   HvpCard(
@@ -111,6 +116,43 @@ class MemberDetailScreen extends ConsumerWidget {
               membershipId: package.id,
               packageName: package.name)
           : null,
+    );
+  }
+}
+
+/// MEM-19: appears only when other accounts share this learner's phone or email.
+class _DuplicatesBanner extends ConsumerWidget {
+  const _DuplicatesBanner({required this.profile});
+
+  final MemberProfile profile;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final duplicates = ref.watch(duplicatesProvider(profile.id)).valueOrNull ??
+        const <MemberHit>[];
+    if (duplicates.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: HvpButton.secondary(
+        label: '⚠️ ${duplicates.length} tài khoản trùng — Xem & gộp',
+        expand: true,
+        onPressed: () async {
+          final current = MemberHit(
+            id: profile.id,
+            memberCode: profile.memberCode,
+            fullName: profile.fullName,
+            phone: profile.phone,
+            avatarUrl: profile.avatarUrl,
+            status: profile.status,
+          );
+          final keepId = await askMergeAccounts(context, ref,
+              current: current, duplicates: duplicates);
+          // The learner on screen was merged away: continue with the account that was kept.
+          if (keepId != null && keepId != profile.id && context.mounted) {
+            context.pushReplacement(ReceptionPaths.membershipMember(keepId));
+          }
+        },
+      ),
     );
   }
 }

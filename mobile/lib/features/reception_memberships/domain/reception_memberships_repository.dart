@@ -1,3 +1,4 @@
+import '../../reception_checkin/domain/member_hit.dart';
 import 'member_models.dart';
 import 'package_type.dart';
 import 'renewal_models.dart';
@@ -34,4 +35,10 @@ abstract interface class ReceptionMembershipsRepository {
   /// `POST /members/:memberId/status` with [status] `ACTIVE` or `FROZEN`.
   Future<void> changeStatus(String memberId,
       {required String status, required String reason});
+
+  /// `GET /members/:memberId/duplicates`: other accounts with the same phone or email.
+  Future<List<MemberHit>> duplicates(String memberId);
+
+  /// `POST /admin/members/merge`: moves [dropId] into [keepId]. Cannot be undone.
+  Future<void> mergeMembers({required String keepId, required String dropId});
 }

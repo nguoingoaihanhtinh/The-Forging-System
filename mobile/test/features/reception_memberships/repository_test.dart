@@ -126,4 +126,27 @@ void main() {
     expect(desk.calls('POST /members/m1/status').single.data,
         <String, dynamic>{'status': 'FROZEN', 'reason': 'Đi công tác'});
   });
+
+  test(
+      'MEM-19 duplicates maps the accounts and mergeMembers posts keep and drop',
+      () async {
+    boot(<String, Reply>{
+      'GET /members/m1/duplicates': (_) => okEnvelope(<dynamic>[
+            <String, dynamic>{
+              'userId': 'm9',
+              'memberCode': 'HVP9',
+              'fullName': 'Lan Cũ',
+              'phone': '0912345678',
+              'status': 'FROZEN'
+            },
+          ]),
+      'POST /admin/members/merge': (_) =>
+          jsonResponse(204, <String, dynamic>{}),
+    });
+    final dup = (await repo.duplicates('m1')).single;
+    expect([dup.id, dup.fullName, dup.status], ['m9', 'Lan Cũ', 'FROZEN']);
+    await repo.mergeMembers(keepId: 'm1', dropId: 'm9');
+    expect(desk.calls('POST /admin/members/merge').single.data,
+        <String, dynamic>{'keepId': 'm1', 'dropId': 'm9'});
+  });
 }

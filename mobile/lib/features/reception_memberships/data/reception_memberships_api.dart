@@ -52,4 +52,11 @@ class ReceptionMembershipsApi {
           String memberId, String status, String reason) =>
       _api.post('/members/$memberId/status',
           body: <String, dynamic>{'status': status, 'reason': reason});
+
+  Future<ApiEnvelope> duplicates(String memberId) =>
+      _api.get('/members/$memberId/duplicates');
+
+  Future<ApiEnvelope> mergeMembers(String keepId, String dropId) =>
+      _api.post('/admin/members/merge',
+          body: <String, dynamic>{'keepId': keepId, 'dropId': dropId});
 }

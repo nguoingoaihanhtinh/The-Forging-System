@@ -3,6 +3,7 @@ import '../../../core/utils/json_utils.dart';
 import '../domain/reception_memberships_repository.dart';
 import '../domain/renewal_models.dart';
 import '../../membership/data/dto/membership_dto.dart';
+import '../../reception_checkin/domain/member_hit.dart';
 import '../domain/member_models.dart';
 import '../domain/package_type.dart';
 import 'dto/member_dto.dart';
@@ -75,5 +76,18 @@ class ReceptionMembershipsRepositoryImpl
   Future<void> changeStatus(String memberId,
       {required String status, required String reason}) async {
     await _api.changeStatus(memberId, status, reason);
+  }
+
+  @override
+  Future<List<MemberHit>> duplicates(String memberId) async =>
+      (await _api.duplicates(memberId))
+          .dataList
+          .map((e) => duplicateFromJson(asMap(e)))
+          .toList(growable: false);
+
+  @override
+  Future<void> mergeMembers(
+      {required String keepId, required String dropId}) async {
+    await _api.mergeMembers(keepId, dropId);
   }
 }

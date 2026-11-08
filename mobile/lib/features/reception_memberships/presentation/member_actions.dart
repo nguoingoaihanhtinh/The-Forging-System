@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/hvp_toast.dart';
+import '../../reception_checkin/domain/member_hit.dart';
 import 'reception_memberships_providers.dart';
 import 'renewal_notifier.dart';
 import 'widgets/evidence_sheet.dart';
+import 'widgets/merge_sheet.dart';
 import 'widgets/package_picker_sheet.dart';
 import 'widgets/reason_sheet.dart';
 
@@ -77,4 +79,29 @@ Future<void> askChangeStatus(BuildContext context, WidgetRef ref,
     HvpToast.success(
         context, freeze ? 'Đã đóng băng tài khoản.' : 'Đã mở lại tài khoản.');
   }
+}
+
+/// MEM-19: choose the account to keep, confirm, merge every other account into it.
+/// Returns the kept account's id, or null when nothing was merged.
+Future<String?> askMergeAccounts(BuildContext context, WidgetRef ref,
+    {required MemberHit current, required List<MemberHit> duplicates}) async {
+  final repo = ref.read(receptionMembershipsRepositoryProvider);
+  final accounts = <MemberHit>[current, ...duplicates];
+  final keepId = await showMergeSheet(
+    context,
+    accounts: accounts,
+    currentId: current.id,
+    submit: (keepId) async {
+      for (final a in accounts.where((a) => a.id != keepId)) {
+        await repo.mergeMembers(keepId: keepId, dropId: a.id);
+      }
+    },
+  );
+  if (keepId == null) return null;
+  ref.invalidate(memberOverviewProvider(keepId));
+  ref.invalidate(duplicatesProvider(current.id));
+  if (context.mounted) {
+    HvpToast.success(context, 'Đã gộp tài khoản — lịch sử được giữ nguyên.');
+  }
+  return keepId;
 }
