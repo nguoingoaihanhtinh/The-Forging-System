@@ -9,6 +9,7 @@ import '../../../auth/domain/auth_validators.dart';
 import '../../domain/profile_changes.dart';
 import '../../domain/profile_models.dart';
 import '../providers/profile_providers.dart';
+import 'avatar_editor.dart';
 
 /// AUTH-13: edit full name, phone and email. Sends only the changed fields.
 class ProfileEditForm extends ConsumerStatefulWidget {
@@ -75,6 +76,8 @@ class _ProfileEditFormState extends ConsumerState<ProfileEditForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          AvatarEditor(name: widget.profile.fullName),
+          const SizedBox(height: 12),
           HvpTextField(
             label: 'Họ và tên',
             controller: _name,
