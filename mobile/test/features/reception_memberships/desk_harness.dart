@@ -1,6 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hvp_forging/app/route_paths.dart';
+import 'package:hvp_forging/core/design/hvp_text_styles.dart';
+import 'package:hvp_forging/core/design/hvp_theme.dart';
+import 'package:hvp_forging/core/widgets/entrance.dart';
+import 'package:hvp_forging/features/reception_memberships/presentation/screens/member_detail_screen.dart';
+import 'package:hvp_forging/features/reception_memberships/presentation/screens/reception_memberships_tab.dart';
+import '../../helpers/test_harness.dart';
 import 'package:hvp_forging/core/config/app_config.dart';
 import 'package:hvp_forging/core/network/api_client.dart';
 import 'package:hvp_forging/core/network/dio_factory.dart';
@@ -66,3 +75,29 @@ Widget fakePhotoField(BuildContext context, ValueChanged<String?> onChanged) =>
     TextButton(
         onPressed: () => onChanged(kEvidenceUrl),
         child: const Text('CHỌN ẢNH'));
+
+/// The "Gói tập" tab with the member detail pushed from it, like the reception shell.
+Future<void> pumpDeskApp(WidgetTester tester, Desk desk) async {
+  HvpFonts.useGoogleFonts = false;
+  hvpEntranceEnabled = false;
+  usePhoneSurface(tester);
+  final router = GoRouter(routes: <RouteBase>[
+    GoRoute(
+        path: '/',
+        builder: (_, __) => const Scaffold(body: ReceptionMembershipsTab())),
+    GoRoute(
+        path: ReceptionPaths.membershipMemberPattern,
+        builder: (_, state) =>
+            MemberDetailScreen(memberId: state.pathParameters['memberId']!)),
+  ]);
+  addTearDown(router.dispose);
+  await tester.pumpWidget(ProviderScope(
+    overrides: desk.overrides,
+    child: MaterialApp.router(
+        theme: HvpTheme.light(),
+        darkTheme: HvpTheme.dark(),
+        themeMode: ThemeMode.dark,
+        routerConfig: router),
+  ));
+  await tester.pumpAndSettle();
+}

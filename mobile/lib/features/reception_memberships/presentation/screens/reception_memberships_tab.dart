@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/design/hvp_context.dart';
-import '../../../../core/design/hvp_icons.dart';
-import '../../../../core/widgets/empty_state.dart';
+import 'members_tab.dart';
 import 'renewal_requests_view.dart';
 
 /// Reception tab "Gói tập": the renewal inbox and the learner list.
@@ -23,7 +22,7 @@ class ReceptionMembershipsTab extends StatelessWidget {
               child: TabBarView(
                 children: <Widget>[
                   RenewalRequestsView(),
-                  EmptyState(icon: HvpIcons.users, title: 'Học viên'),
+                  MembersTab(),
                 ],
               ),
             ),

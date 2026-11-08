@@ -8,6 +8,7 @@ import '../../features/reception_checkin/domain/member_hit.dart';
 import '../../features/reception_checkin/presentation/assisted_checkin_screen.dart';
 import '../../features/reception_checkin/presentation/member_today_screen.dart';
 import '../../features/reception_checkin/presentation/reception_checkin_tab.dart';
+import '../../features/reception_memberships/presentation/screens/member_detail_screen.dart';
 import '../../features/reception_memberships/presentation/screens/reception_memberships_tab.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
@@ -74,6 +75,12 @@ List<RouteBase> receptionRoutes() => <RouteBase>[
           memberId: state.pathParameters['memberId'] ?? '',
           sessionId: state.pathParameters['sessionId'] ?? '',
           member: state.extra is MemberHit ? state.extra! as MemberHit : null,
+        ),
+      ),
+      GoRoute(
+        path: ReceptionPaths.membershipMemberPattern,
+        builder: (context, state) => MemberDetailScreen(
+          memberId: state.pathParameters['memberId'] ?? '',
         ),
       ),
     ];

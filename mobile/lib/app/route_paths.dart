@@ -90,6 +90,10 @@ abstract final class ReceptionPaths {
       '/reception/checkin/member/$memberId/session/$sessionId';
 
   static const String memberships = '/reception/memberships';
+  static const String membershipMemberPattern =
+      '/reception/memberships/member/:memberId';
+  static String membershipMember(String memberId) =>
+      '/reception/memberships/member/$memberId';
   static const String stock = '/reception/stock';
   static const String handover = '/reception/handover';
 }

@@ -1,3 +1,4 @@
+import 'member_models.dart';
 import 'renewal_models.dart';
 
 /// Everything the front desk (and admin) does on packages and learners.
@@ -14,4 +15,7 @@ abstract interface class ReceptionMembershipsRepository {
 
   /// `POST /memberships/:id/cancel`
   Future<void> cancelMembership(String id, {required String reason});
+
+  /// `GET /members/:memberId` and `GET /members/:memberId/membership`, together.
+  Future<MemberOverview> memberOverview(String memberId);
 }

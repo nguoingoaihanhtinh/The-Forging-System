@@ -5,6 +5,8 @@ import '../../../core/network/network_providers.dart';
 import '../../../core/widgets/evidence_photo_picker.dart';
 import '../data/reception_memberships_api.dart';
 import '../data/reception_memberships_repository_impl.dart';
+import '../../auth/presentation/providers/auth_controller.dart';
+import '../domain/member_models.dart';
 import '../domain/reception_memberships_repository.dart';
 
 /// Tests override this with a fake repository.
@@ -25,3 +27,12 @@ final evidencePhotoBuilderProvider = Provider<EvidencePhotoBuilder>(
         hint: 'Chụp hoặc chọn ảnh đã thu phí',
       ),
 );
+
+/// A learner's profile and packages.
+final memberOverviewProvider =
+    FutureProvider.autoDispose.family<MemberOverview, String>((ref, memberId) {
+  ref.watch(currentUserIdProvider);
+  return ref
+      .watch(receptionMembershipsRepositoryProvider)
+      .memberOverview(memberId);
+});

@@ -29,4 +29,9 @@ class ReceptionMembershipsApi {
   Future<ApiEnvelope> cancelMembership(String id, String reason) =>
       _api.post('/memberships/$id/cancel',
           body: <String, dynamic>{'reason': reason});
+
+  Future<ApiEnvelope> member(String memberId) => _api.get('/members/$memberId');
+
+  Future<ApiEnvelope> memberMembership(String memberId) =>
+      _api.get('/members/$memberId/membership');
 }

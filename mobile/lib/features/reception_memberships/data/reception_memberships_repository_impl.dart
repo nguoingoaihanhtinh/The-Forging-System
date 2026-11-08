@@ -1,6 +1,10 @@
+import '../../../core/network/api_client.dart';
 import '../../../core/utils/json_utils.dart';
 import '../domain/reception_memberships_repository.dart';
 import '../domain/renewal_models.dart';
+import '../../membership/data/dto/membership_dto.dart';
+import '../domain/member_models.dart';
+import 'dto/member_dto.dart';
 import 'dto/renewal_dto.dart';
 import 'reception_memberships_api.dart';
 
@@ -32,5 +36,17 @@ class ReceptionMembershipsRepositoryImpl
   @override
   Future<void> cancelMembership(String id, {required String reason}) async {
     await _api.cancelMembership(id, reason);
+  }
+
+  @override
+  Future<MemberOverview> memberOverview(String memberId) async {
+    final results = await Future.wait(<Future<Object>>[
+      _api.member(memberId),
+      _api.memberMembership(memberId)
+    ]);
+    return MemberOverview(
+      profile: memberProfileFromJson((results[0] as ApiEnvelope).dataMap),
+      membership: myMembershipFromJson((results[1] as ApiEnvelope).dataMap),
+    );
   }
 }

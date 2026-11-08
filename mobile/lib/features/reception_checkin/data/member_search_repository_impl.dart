@@ -12,9 +12,11 @@ class MemberSearchRepositoryImpl implements MemberSearchRepository {
 
   @override
   Future<MemberSearchResult> search(String query) async {
-    final response = await api.get('/members', query: <String, dynamic>{'q': query, 'page': 1, 'limit': pageSize});
+    final response = await api.get('/members',
+        query: <String, dynamic>{'q': query, 'page': 1, 'limit': pageSize});
     return MemberSearchResult(
-      items: response.dataList.map((e) => _hit(asMap(e))).toList(growable: false),
+      items:
+          response.dataList.map((e) => _hit(asMap(e))).toList(growable: false),
       total: intOf(response.meta ?? const <String, dynamic>{}, 'total'),
     );
   }
@@ -28,5 +30,6 @@ class MemberSearchRepositoryImpl implements MemberSearchRepository {
         status: str(j, 'status', 'ACTIVE'),
         rankName: strOrNull(j, 'rankName'),
         packageName: strOrNull(j, 'packageName'),
+        packageEndDate: strOrNull(j, 'packageEndDate'),
       );
 }
