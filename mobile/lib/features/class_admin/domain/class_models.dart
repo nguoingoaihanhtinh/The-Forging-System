@@ -163,3 +163,25 @@ class ClassDetail {
   final ClassSummary summary;
   final List<RosterEntry> roster;
 }
+
+class ClassSession {
+  const ClassSession({
+    required this.id,
+    required this.title,
+    required this.startsAt,
+    required this.status,
+    required this.isExam,
+    required this.attendeeCount,
+    this.coachName,
+  });
+
+  final String id;
+  final String title;
+  final DateTime startsAt;
+
+  /// `SCHEDULED`, `IN_PROGRESS`, `COMPLETED` or `CANCELLED`.
+  final String status;
+  final bool isExam;
+  final int attendeeCount;
+  final String? coachName;
+}

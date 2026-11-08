@@ -125,6 +125,42 @@ class FakeClassRepository implements ClassRepository {
   Future<void> removeMember(String classId, String memberId) async =>
       removed.add(memberId);
 
+  final cancelled = <String>[];
+  Object? cancelError;
+  var sessionList = <ClassSession>[
+    ClassSession(
+        id: 's1',
+        title: 'Boxing sáng',
+        startsAt: DateTime.now().add(const Duration(days: 2)),
+        status: 'SCHEDULED',
+        isExam: false,
+        attendeeCount: 0,
+        coachName: 'Mai Nguyễn'),
+    ClassSession(
+        id: 's0',
+        title: 'Boxing sáng',
+        startsAt: DateTime.now().subtract(const Duration(days: 1)),
+        status: 'SCHEDULED',
+        isExam: false,
+        attendeeCount: 3),
+    ClassSession(
+        id: 's2',
+        title: 'Boxing sáng',
+        startsAt: DateTime.now().add(const Duration(days: 4)),
+        status: 'CANCELLED',
+        isExam: false,
+        attendeeCount: 0),
+  ];
+
+  @override
+  Future<List<ClassSession>> sessions(String classId) async => sessionList;
+
+  @override
+  Future<void> cancelSession(String sessionId, String reason) async {
+    if (cancelError != null) throw cancelError!;
+    cancelled.add('$sessionId|$reason');
+  }
+
   @override
   Future<List<ClassCoach>> coaches() async =>
       const <ClassCoach>[ClassCoach('k1', 'Mai Nguyễn')];

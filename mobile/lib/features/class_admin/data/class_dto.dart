@@ -31,3 +31,14 @@ ClassDetail classDetailFromJson(JsonMap j) => ClassDetail(
               ))
           .toList(growable: false),
     );
+
+ClassSession classSessionFromJson(JsonMap j) => ClassSession(
+      id: str(j, 'id'),
+      title: str(j, 'title'),
+      startsAt: dateOrNull(j, 'startsAt') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      status: str(j, 'status'),
+      isExam: boolOf(j, 'isExam'),
+      attendeeCount: intOf(j, 'attendeeCount'),
+      coachName: strOrNull(asMap(j['coach']), 'fullName'),
+    );

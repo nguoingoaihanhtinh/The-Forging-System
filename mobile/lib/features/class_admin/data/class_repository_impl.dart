@@ -53,6 +53,20 @@ class ClassRepositoryImpl implements ClassRepository {
   }
 
   @override
+  Future<List<ClassSession>> sessions(String classId) async {
+    final response = await _api.get('/admin/classes/$classId/sessions');
+    return response.dataList
+        .map((e) => classSessionFromJson(asMap(e)))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> cancelSession(String sessionId, String reason) async {
+    await _api.post('/sessions/$sessionId/cancel',
+        body: <String, dynamic>{'reason': reason.trim()});
+  }
+
+  @override
   Future<List<ClassCoach>> coaches() async {
     final result = <ClassCoach>[];
     for (final role in const <String>['COACH', 'HEAD_COACH']) {

@@ -16,6 +16,7 @@ import '../../domain/class_rules.dart';
 import '../../domain/session_types.dart';
 import '../class_providers.dart';
 import '../widgets/class_form_sheet.dart';
+import '../widgets/class_sessions_section.dart';
 import '../widgets/enrol_member_sheet.dart';
 
 /// CLS-08: one class with its roster; enrol and remove learners.
@@ -57,7 +58,10 @@ class ClassDetailScreen extends ConsumerWidget {
         builder: (_, d) {
           final c = d.summary;
           return HvpRefresh(
-            onRefresh: () => ref.refresh(classDetailProvider(classId).future),
+            onRefresh: () {
+              ref.invalidate(classSessionsProvider(classId));
+              return ref.refresh(classDetailProvider(classId).future);
+            },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
@@ -82,6 +86,7 @@ class ClassDetailScreen extends ConsumerWidget {
                             style: t.bodySmall),
                       ]),
                 ),
+                ClassSessionsSection(classId: classId),
                 SectionHeader(title: 'Học viên (${d.roster.length})'),
                 HvpButton.primary(
                     label: '＋ Thêm học viên vào lớp',

@@ -30,3 +30,9 @@ final classDetailProvider =
   ref.watch(currentUserIdProvider);
   return ref.watch(classRepositoryProvider).detail(id);
 });
+
+final classSessionsProvider = FutureProvider.autoDispose
+    .family<List<ClassSession>, String>((ref, classId) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(classRepositoryProvider).sessions(classId);
+});

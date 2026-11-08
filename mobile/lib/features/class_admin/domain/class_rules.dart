@@ -46,3 +46,10 @@ String? validateCapacity(String? v) {
       ? null
       : 'Sĩ số từ 1 đến 1000 hoặc để trống.';
 }
+
+/// Only a SCHEDULED session that has not started can be cancelled.
+bool canCancelSession(String status, DateTime startsAt, DateTime now) =>
+    status == 'SCHEDULED' && startsAt.isAfter(now);
+
+String? validateCancelReason(String? v) =>
+    (v ?? '').trim().isEmpty ? 'Vui lòng nhập lý do huỷ.' : null;
