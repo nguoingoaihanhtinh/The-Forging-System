@@ -1,0 +1,45 @@
+import '../../../core/network/api_client.dart';
+import '../../../core/utils/json_utils.dart';
+import '../domain/class_models.dart';
+import '../domain/class_repository.dart';
+import 'class_dto.dart';
+
+class ClassRepositoryImpl implements ClassRepository {
+  ClassRepositoryImpl(this._api);
+
+  final ApiClient _api;
+
+  @override
+  Future<ClassPage> list(ClassQuery query) async {
+    final response = await _api.get('/admin/classes', query: <String, dynamic>{
+      'page': query.page,
+      'limit': query.limit,
+      if (query.sessionTypeCode != null)
+        'sessionTypeCode': query.sessionTypeCode,
+    });
+    final meta = PageMeta.fromJson(response.meta, fallbackLimit: query.limit);
+    return ClassPage(
+      items: response.dataList
+          .map((e) => classSummaryFromJson(asMap(e)))
+          .toList(growable: false),
+      page: meta.page,
+      total: meta.total,
+      totalPages: meta.totalPages,
+    );
+  }
+
+  @override
+  Future<List<ClassCoach>> coaches() async {
+    final result = <ClassCoach>[];
+    for (final role in const <String>['COACH', 'HEAD_COACH']) {
+      final response = await _api.get('/admin/staff',
+          query: <String, dynamic>{'role': role, 'limit': 100});
+      for (final e in response.dataList) {
+        final j = asMap(e);
+        result.add(ClassCoach(str(j, 'id'), str(j, 'fullName')));
+      }
+    }
+    result.sort((a, b) => a.name.compareTo(b.name));
+    return result;
+  }
+}

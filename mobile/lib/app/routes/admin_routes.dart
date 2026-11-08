@@ -8,6 +8,7 @@ import '../../features/branch_admin/presentation/screens/branch_list_screen.dart
 import '../../features/armory_admin/presentation/screens/admin_armory_management_screen.dart';
 import '../../features/armory_admin/presentation/screens/admin_armory_reward_form_screen.dart';
 import '../../features/armory_admin/presentation/screens/admin_armory_tiers_screen.dart';
+import '../../features/class_admin/presentation/screens/class_list_screen.dart';
 import '../../features/staff/presentation/screens/staff_directory_screen.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
@@ -41,11 +42,7 @@ List<RouteBase> adminRoutes() => <RouteBase>[
             label: 'Đào tạo',
             icon: HvpIcons.book,
             activeIcon: HvpIcons.bookFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Đào tạo',
-              owner: 'feature: admin_training',
-              icon: HvpIcons.book,
-            ),
+            builder: (_) => const ClassListScreen(),
           ),
           ShellTab(
             path: AdminPaths.challenges,
