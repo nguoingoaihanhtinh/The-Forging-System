@@ -45,3 +45,15 @@ PackageType packageTypeFromJson(JsonMap j) => PackageType(
       totalSessions: _intOrNull(j, 'totalSessions'),
       priceVnd: _intOrNull(j, 'priceVnd'),
     );
+
+RenewalRequest renewalRequestFromJson(JsonMap j) {
+  final pkg = asMap(j['desiredPackage']);
+  return RenewalRequest(
+    id: str(j, 'id'),
+    status: RenewalStatus.parse(strOrNull(j, 'status')),
+    packageName: str(pkg, 'name'),
+    priceVnd: _intOrNull(pkg, 'priceVnd'),
+    reason: strOrNull(j, 'reason'),
+    createdAt: dateOrNull(j, 'createdAt'),
+  );
+}

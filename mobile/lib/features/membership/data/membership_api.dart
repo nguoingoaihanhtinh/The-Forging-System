@@ -14,4 +14,7 @@ class MembershipApi {
         'packageTypeId': packageTypeId,
         if (note != null) 'note': note,
       });
+
+  Future<ApiEnvelope> myRenewalRequests() =>
+      _api.get('/me/renewal-requests', query: <String, dynamic>{'limit': 50});
 }

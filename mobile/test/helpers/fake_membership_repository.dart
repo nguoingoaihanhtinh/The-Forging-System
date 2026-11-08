@@ -7,14 +7,17 @@ class FakeMembershipRepository implements MembershipRepository {
     this.membership, {
     this.packages,
     this.request,
+    this.history,
   });
 
   final Future<MyMembership> Function() membership;
   final Future<List<PackageType>> Function()? packages;
   final Future<void> Function(String packageTypeId, String? note)? request;
+  final Future<List<RenewalRequest>> Function()? history;
 
   int membershipCalls = 0;
   int packageCalls = 0;
+  int historyCalls = 0;
   final List<({String packageTypeId, String? note})> requests =
       <({String packageTypeId, String? note})>[];
 
@@ -35,5 +38,13 @@ class FakeMembershipRepository implements MembershipRepository {
       {required String packageTypeId, String? note}) async {
     requests.add((packageTypeId: packageTypeId, note: note));
     await request!(packageTypeId, note);
+  }
+
+  @override
+  Future<List<RenewalRequest>> listMyRenewalRequests() {
+    historyCalls++;
+    return history == null
+        ? Future<List<RenewalRequest>>.value(const <RenewalRequest>[])
+        : history!();
   }
 }

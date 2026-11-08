@@ -212,6 +212,70 @@ void main() {
     expect(find.text('Chào mừng! Bạn chưa có gói tập'), findsNothing);
   });
 
+  testWidgets('renewal history lists status, package, date and reason',
+      (tester) async {
+    final repo = FakeMembershipRepository(
+      () async => _m(notice: RenewNotice.noPackage),
+      history: () async => <RenewalRequest>[
+        RenewalRequest(
+          id: 'r1',
+          status: RenewalStatus.cancelled,
+          packageName: 'BOOK II',
+          priceVnd: 9800000,
+          reason: 'Chưa nhận được tiền',
+          createdAt: DateTime.utc(2026, 10, 24, 5),
+        ),
+        RenewalRequest(
+          id: 'r2',
+          status: RenewalStatus.completed,
+          packageName: 'BOOK I',
+          createdAt: DateTime.utc(2026, 8, 1, 5),
+        ),
+      ],
+    );
+    await pumpHvp(tester, const MembershipScreen(), overrides: <Override>[
+      membershipRepositoryProvider.overrideWithValue(repo),
+      currentUserIdProvider.overrideWithValue('u1'),
+    ]);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('BOOK I'), 200);
+    expect(find.text('ĐÃ HUỶ'), findsOneWidget);
+    expect(find.text('ĐÃ GIA HẠN'), findsOneWidget);
+    expect(find.text('Gửi 24/10/2026 · 9.800.000đ'), findsOneWidget);
+    expect(find.text('Lý do huỷ: Chưa nhận được tiền'), findsOneWidget);
+    expect(find.text('Gửi 01/08/2026 · Chưa có giá'), findsOneWidget);
+  });
+
+  testWidgets('empty history', (tester) async {
+    await _pump(tester, () async => _m(notice: RenewNotice.noPackage));
+    await tester.scrollUntilVisible(
+        find.text('Bạn chưa gửi yêu cầu gia hạn nào'), 200);
+    expect(find.text('Bạn chưa gửi yêu cầu gia hạn nào'), findsOneWidget);
+  });
+
+  testWidgets('history error stays inline and retries', (tester) async {
+    var fail = true;
+    final repo = FakeMembershipRepository(
+      () async => _m(notice: RenewNotice.noPackage),
+      history: () async {
+        if (fail) throw const ApiException(code: 'X', message: 'Lỗi lịch sử');
+        return <RenewalRequest>[];
+      },
+    );
+    await pumpHvp(tester, const MembershipScreen(), overrides: <Override>[
+      membershipRepositoryProvider.overrideWithValue(repo),
+      currentUserIdProvider.overrideWithValue('u1'),
+    ]);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Lỗi lịch sử'), 200);
+    expect(find.text('CHƯA CÓ GÓI TẬP'), findsOneWidget);
+    fail = false;
+    await tester.tap(find.widgetWithText(HvpButton, 'THỬ LẠI'));
+    await tester.pumpAndSettle();
+    expect(repo.historyCalls, 2);
+    expect(find.text('Bạn chưa gửi yêu cầu gia hạn nào'), findsOneWidget);
+  });
+
   testWidgets('ProfileTab row pushes the membership route', (tester) async {
     final router = GoRouter(
       routes: <RouteBase>[

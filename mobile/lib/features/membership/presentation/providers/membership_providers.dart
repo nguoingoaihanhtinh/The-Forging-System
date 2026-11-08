@@ -26,3 +26,10 @@ final packageTypesProvider = FutureProvider.autoDispose<List<PackageType>>(
 
 final renewalSubmitProvider =
     NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+/// First page of the member's renewal requests (newest first).
+final myRenewalRequestsProvider =
+    FutureProvider.autoDispose<List<RenewalRequest>>((ref) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(membershipRepositoryProvider).listMyRenewalRequests();
+});

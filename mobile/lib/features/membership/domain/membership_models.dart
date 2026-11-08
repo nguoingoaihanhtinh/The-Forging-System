@@ -117,3 +117,40 @@ class PackageType {
   final int? totalSessions;
   final int? priceVnd;
 }
+
+enum RenewalStatus {
+  pending('PENDING', 'Chờ xử lý'),
+  completed('COMPLETED', 'Đã gia hạn'),
+  cancelled('CANCELLED', 'Đã huỷ');
+
+  const RenewalStatus(this.wire, this.label);
+
+  final String wire;
+  final String label;
+
+  static RenewalStatus parse(String? value) {
+    for (final s in RenewalStatus.values) {
+      if (s.wire == value) return s;
+    }
+    return RenewalStatus.pending;
+  }
+}
+
+/// One entry of `GET /me/renewal-requests`. [reason] is the cancel reason.
+class RenewalRequest {
+  const RenewalRequest({
+    required this.id,
+    required this.status,
+    required this.packageName,
+    required this.createdAt,
+    this.priceVnd,
+    this.reason,
+  });
+
+  final String id;
+  final RenewalStatus status;
+  final String packageName;
+  final int? priceVnd;
+  final String? reason;
+  final DateTime? createdAt;
+}

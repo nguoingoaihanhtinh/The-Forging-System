@@ -27,4 +27,11 @@ class MembershipRepositoryImpl implements MembershipRepository {
     await _api.requestRenewal(
         packageTypeId, trimmed == null || trimmed.isEmpty ? null : trimmed);
   }
+
+  @override
+  Future<List<RenewalRequest>> listMyRenewalRequests() async =>
+      (await _api.myRenewalRequests())
+          .dataList
+          .map((e) => renewalRequestFromJson(asMap(e)))
+          .toList(growable: false);
 }

@@ -10,4 +10,7 @@ abstract class MembershipRepository {
 
   /// `POST /me/renewal-requests`
   Future<void> requestRenewal({required String packageTypeId, String? note});
+
+  /// `GET /me/renewal-requests`, newest first. First page only (limit 50).
+  Future<List<RenewalRequest>> listMyRenewalRequests();
 }

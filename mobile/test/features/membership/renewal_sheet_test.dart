@@ -102,6 +102,7 @@ void main() {
     expect(find.text('Đã gửi yêu cầu gia hạn tới lễ tân.'), findsOneWidget);
     expect(find.text('CHỌN GÓI TẬP'), findsNothing);
     expect(repo.membershipCalls, 2);
+    expect(repo.historyCalls, 2);
   });
 
   testWidgets('declining the confirmation sends nothing', (tester) async {

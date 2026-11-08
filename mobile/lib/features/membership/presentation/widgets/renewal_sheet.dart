@@ -75,6 +75,7 @@ class _RenewalSheetState extends ConsumerState<RenewalSheet> {
     });
     if (!mounted || !ok) return;
     ref.invalidate(myMembershipProvider);
+    ref.invalidate(myRenewalRequestsProvider);
     HvpToast.success(context, 'Đã gửi yêu cầu gia hạn tới lễ tân.');
     Navigator.of(context).pop();
   }
