@@ -23,8 +23,8 @@ class ChallengeReviewTab extends ConsumerStatefulWidget {
 
 class _ChallengeReviewTabState extends ConsumerState<ChallengeReviewTab> {
   String _query = '';
-  String? _status = 'AWAITING_COACH';
-  String? _evidence = 'SUBMITTED';
+  String? _status;
+  String? _evidence;
   int _page = 1;
 
   ({String? status, String? evidence, String query, int page}) get _filter => (
@@ -76,6 +76,7 @@ class _ChallengeReviewTabState extends ConsumerState<ChallengeReviewTab> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             children: <Widget>[
               _chip(null, 'Tất cả'),
+              _chip('PENDING_COACH', 'Chờ duyệt tham gia'),
               _chip('JOINED', 'Đã tham gia'),
               _chip('AWAITING_COACH', 'Chờ duyệt'),
               _chip('REWARDED', 'Đã thưởng'),
@@ -198,6 +199,12 @@ class _ReviewCard extends ConsumerWidget {
             Text('Học viên chưa nộp ảnh minh chứng.', style: context.txt.bodySmall),
           ],
           const SizedBox(height: 14),
+          if (item.status == 'PENDING_COACH') HvpButton.gold(
+              label: 'Duyệt tham gia',
+              small: true,
+              loading: submitting,
+              onPressed: submitting ? null : () => _approveJoin(context, ref),
+            ),
           if (item.status == 'AWAITING_COACH') HvpButton.gold(
               label: 'Duyệt và phát thưởng',
               small: true,
@@ -224,7 +231,22 @@ class _ReviewCard extends ConsumerWidget {
     if (ok) ref.invalidate(challengeReviewQueueProvider(filter));
   }
 
+  Future<void> _approveJoin(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showConfirmSheet(
+      context,
+      title: 'Duyệt tham gia Challenge',
+      message: 'Cho phép ${item.memberFullName} thực hiện thử thách này?',
+      confirmLabel: 'Duyệt tham gia',
+    );
+    if (!confirmed) return;
+    final ok = await ref.read(challengeReviewActionProvider.notifier).run(
+      () => ref.read(challengeReviewRepositoryProvider).approveJoin(item.participationId),
+    );
+    if (ok) ref.invalidate(challengeReviewQueueProvider(filter));
+  }
+
   String _statusLabel(String status) => switch (status) {
+    'PENDING_COACH' => 'Chờ duyệt tham gia',
     'JOINED' => 'Đã tham gia',
     'AWAITING_COACH' => 'Chờ duyệt',
     'REWARDED' => 'Đã thưởng',
