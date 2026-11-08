@@ -12,6 +12,7 @@ import type {
   CreateRedemptionInput,
   ApprovePickupInput,
   DeliveryInput,
+  RejectPickupInput,
   RedemptionDecision,
   RedemptionHistoryFilter,
 } from './redemption.validation';
@@ -79,6 +80,17 @@ export class RedemptionService {
       input.reason ?? null,
       input.deliveryEvidenceUrl ?? null,
     );
+  }
+
+  /** GFT-05: rejects an open redemption and releases both its Marks hold and stock reservation. */
+  async rejectPickup(id: string, input: RejectPickupInput, actor: AuthContext) {
+    const order = await this.lockOrder(id);
+    this.assertPickupBranch(order, actor);
+    if (order.status === 'REJECTED') return { redemption: order, duplicate: true };
+    if (!['PENDING_PICKUP', 'READY_PICKUP'].includes(order.status)) {
+      throw conflict('Chỉ đơn đang chờ xử lý mới có thể từ chối.', 'REDEMPTION_NOT_OPEN');
+    }
+    return this.close(order, 'REJECTED', actor.userId, input.reason, null);
   }
 
   /** Internal system hook; caller must check the expiry deadline before invoking it. */

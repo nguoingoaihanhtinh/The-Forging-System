@@ -53,6 +53,11 @@ export const deliveryBody = z
   .strict();
 export type DeliveryInput = z.infer<typeof deliveryBody>;
 
+export const rejectPickupBody = z
+  .object({ reason: z.string().trim().min(3).max(500) })
+  .strict();
+export type RejectPickupInput = z.infer<typeof rejectPickupBody>;
+
 export const approvePickupBody = z
   .object({ reason: z.string().trim().min(3).max(500).optional() })
   .strict();

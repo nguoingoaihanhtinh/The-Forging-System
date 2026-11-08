@@ -238,6 +238,28 @@ Body tùy chọn:
 - Stock đã được reserve từ lúc tạo redemption nên không trừ thêm.
 - Retry trên đơn `DELIVERED` trả `200` với `duplicate: true`, không trừ Marks lần hai.
 
+---
+
+# GFT-05 — Từ chối đơn và hoàn hold Marks/tồn kho
+
+## API
+
+```http
+POST /api/v1/staff/armory/redemptions/:redemptionId/reject
+```
+
+Body bắt buộc:
+
+```json
+{ "reason": "Hết hàng tại quầy" }
+```
+
+- Chỉ `RECEPTIONIST`, `ADMIN`, `SUPER_ADMIN`; lễ tân bị giới hạn theo chi nhánh nhận.
+- Chỉ đơn `PENDING_PICKUP` hoặc `READY_PICKUP` được từ chối; đơn khác trả `409 REDEMPTION_NOT_OPEN`.
+- Đơn chuyển sang `REJECTED`, ghi Audit `REDEMPTION_REJECTED` và khôi phục một đơn vị tồn kho kèm inventory movement `IN`.
+- Marks chưa bị debit trước khi giao; do đó API giải phóng hold, làm Marks khả dụng của học viên tăng lại, thay vì tạo transaction hoàn tiền.
+- Retry khi đơn đã `REJECTED` trả `200` với `duplicate: true`.
+
 
 ---
 

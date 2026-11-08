@@ -11,6 +11,7 @@ import {
   cancelBody,
   createRedemptionBody,
   deliveryBody,
+  rejectPickupBody,
   decisionBody,
   redemptionHistoryQuery,
   redemptionIdParam,
@@ -60,6 +61,13 @@ export function redemptionRoutes(service: RedemptionService): Router {
     handle(async (req) =>
       ok(await service.cancel(authOf(req).userId, req.params.redemptionId, req.body.reason)),
     ),
+  );
+  r.post(
+    '/staff/armory/redemptions/:redemptionId/reject',
+    requireAuth,
+    requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ params: redemptionIdParam, body: rejectPickupBody }),
+    handle(async (req) => ok(await service.rejectPickup(req.params.redemptionId, req.body, authOf(req)))),
   );
   r.post(
     '/staff/armory/redemptions/:redemptionId/deliver',

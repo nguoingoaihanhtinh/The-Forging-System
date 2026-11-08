@@ -27,6 +27,7 @@ describe('GFT-03 redemption approval', () => {
     lockOrder: vi.fn(),
     transitionToReadyPickup: vi.fn(),
     transition: vi.fn(),
+    restoreStock: vi.fn(),
   };
   const audit = { record: vi.fn() };
   const points = { award: vi.fn() };
@@ -98,5 +99,23 @@ describe('GFT-03 redemption approval', () => {
       code: 'REDEMPTION_NOT_READY',
     });
     expect(points.award).not.toHaveBeenCalled();
+  });
+
+  it('rejects an open redemption, releasing its Marks hold and restoring one reserved stock item', async () => {
+    vi.resetAllMocks();
+    const ready = { ...order, status: 'READY_PICKUP' };
+    const rejected = { ...ready, status: 'REJECTED' };
+    repo.memberForOrder.mockResolvedValue(order.memberId);
+    repo.lockMember.mockResolvedValue({ id: order.memberId });
+    repo.lockOrder.mockResolvedValue(ready);
+    repo.transition.mockResolvedValue(rejected);
+
+    await expect(service.rejectPickup(order.id, { reason: 'Hết hàng tại quầy' }, reception)).resolves.toEqual({
+      redemption: rejected,
+      duplicate: false,
+    });
+    expect(points.award).not.toHaveBeenCalled();
+    expect(repo.restoreStock).toHaveBeenCalledWith(ready, reception.userId, 'Hết hàng tại quầy');
+    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'REDEMPTION_REJECTED' }));
   });
 });
