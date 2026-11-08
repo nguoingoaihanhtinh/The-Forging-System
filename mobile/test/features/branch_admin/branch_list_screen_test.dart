@@ -8,6 +8,7 @@ import 'package:hvp_forging/core/widgets/hvp_button.dart';
 import 'package:hvp_forging/features/auth/presentation/providers/auth_controller.dart';
 import 'package:hvp_forging/features/branch_admin/domain/branch_admin_repository.dart';
 import 'package:hvp_forging/features/branch_admin/domain/branch_input.dart';
+import 'package:hvp_forging/features/branch_admin/domain/branch_qr.dart';
 import 'package:hvp_forging/features/branch_admin/presentation/providers/branch_admin_providers.dart';
 import 'package:hvp_forging/features/branch_admin/presentation/screens/branch_list_screen.dart';
 
@@ -31,6 +32,13 @@ class _FakeRepo implements BranchAdminRepository {
   @override
   Future<Branch> setActive(String branchId,
           {required bool isActive, required String reason}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<BranchQr> getQr(String branchId) => throw UnimplementedError();
+
+  @override
+  Future<BranchQr> rotateQr(String branchId, {String? reason}) =>
       throw UnimplementedError();
 }
 

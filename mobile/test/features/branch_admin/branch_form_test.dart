@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:hvp_forging/core/branch/branch.dart';
 import 'package:hvp_forging/core/error/api_exception.dart';
 import 'package:hvp_forging/features/auth/presentation/providers/auth_controller.dart';
 import 'package:hvp_forging/features/branch_admin/domain/branch_admin_repository.dart';
 import 'package:hvp_forging/features/branch_admin/domain/branch_input.dart';
+import 'package:hvp_forging/features/branch_admin/domain/branch_qr.dart';
 import 'package:hvp_forging/features/branch_admin/presentation/providers/branch_admin_providers.dart';
 import 'package:hvp_forging/features/branch_admin/presentation/screens/branch_list_screen.dart';
 import 'package:hvp_forging/features/branch_admin/presentation/widgets/branch_form_sheet.dart';
@@ -20,6 +22,9 @@ class _Repo implements BranchAdminRepository {
   BranchInput? created;
   (String, BranchInput)? updated;
   ApiException? failWith;
+  String version = '3';
+  bool rotated = false;
+  String? rotateReason;
   ({String id, bool isActive, String reason})? status;
 
   @override
@@ -48,6 +53,25 @@ class _Repo implements BranchAdminRepository {
       Branch(id: id, code: 'Q1', name: 'The Corner', isActive: isActive)
     ];
     return branches.first;
+  }
+
+  @override
+  Future<BranchQr> getQr(String id) async {
+    if (failWith != null) throw failWith!;
+    return BranchQr(
+        branchId: id,
+        code: 'Q1',
+        qrVersion: version,
+        payload: 'HVP|Q1|$version');
+  }
+
+  @override
+  Future<BranchQr> rotateQr(String id, {String? reason}) async {
+    if (failWith != null) throw failWith!;
+    rotated = true;
+    rotateReason = reason;
+    version = '4';
+    return getQr(id);
   }
 
   @override
@@ -185,5 +209,86 @@ void main() {
 
     expect(find.text('Lỗi máy chủ'), findsOneWidget);
     expect(repo.listCalls, 1);
+  });
+
+  testWidgets('rotate: warns, reason optional, then toasts and refreshes',
+      (tester) async {
+    final repo = _Repo();
+    await _pump(tester, repo);
+    await tester.tap(find.text('The Corner'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('ĐỔI MÃ QR'));
+    await tester.tap(find.text('ĐỔI MÃ QR'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Mã QR đã in sẽ không còn dùng được'),
+        findsOneWidget);
+
+    // an empty reason is fine
+    await tester.tap(find.text('ĐỔI MÃ QR').last);
+    await tester.pumpAndSettle();
+
+    expect(repo.rotated, isTrue);
+    expect(repo.rotateReason, isNull);
+    expect(find.text('Đã đổi mã QR check-in.'), findsOneWidget);
+    expect(repo.listCalls, 2);
+  });
+
+  testWidgets('rotate: sends the reason and shows an API error',
+      (tester) async {
+    final repo = _Repo();
+    await _pump(tester, repo);
+    await tester.tap(find.text('The Corner'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('ĐỔI MÃ QR'));
+    await tester.tap(find.text('ĐỔI MÃ QR'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).last, 'Mất bảng QR');
+    await tester.tap(find.text('ĐỔI MÃ QR').last);
+    await tester.pumpAndSettle();
+    expect(repo.rotateReason, 'Mất bảng QR');
+
+    repo.failWith = const ApiException(
+        code: 'SERVER_ERROR', message: 'Lỗi máy chủ', statusCode: 500);
+    await tester.tap(find.text('The Corner'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('ĐỔI MÃ QR'));
+    await tester.tap(find.text('ĐỔI MÃ QR'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ĐỔI MÃ QR').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Lỗi máy chủ'), findsOneWidget);
+  });
+
+  testWidgets(
+      'static QR screen draws the payload and says it is not for check-in',
+      (tester) async {
+    final repo = _Repo();
+    await _pump(tester, repo);
+    await tester.tap(find.text('The Corner'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('XEM MÃ QR ĐỂ IN'));
+    await tester.tap(find.text('XEM MÃ QR ĐỂ IN'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey<String>('qr:HVP|Q1|3')), findsOneWidget);
+    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.text('Q1 · Mã QR: phiên bản 3'), findsOneWidget);
+    expect(find.textContaining('không phải mã check-in'), findsOneWidget);
+    expect(find.textContaining('mã xoay vòng'), findsOneWidget);
+  });
+
+  testWidgets('static QR screen shows the API error', (tester) async {
+    final repo = _Repo();
+    await _pump(tester, repo);
+    await tester.tap(find.text('The Corner'));
+    await tester.pumpAndSettle();
+    repo.failWith = const ApiException(
+        code: 'FORBIDDEN', message: 'Không đủ quyền', statusCode: 403);
+    await tester.ensureVisible(find.text('XEM MÃ QR ĐỂ IN'));
+    await tester.tap(find.text('XEM MÃ QR ĐỂ IN'));
+    await tester.pumpAndSettle();
+    expect(find.text('Không đủ quyền'), findsOneWidget);
   });
 }

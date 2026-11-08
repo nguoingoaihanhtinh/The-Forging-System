@@ -11,6 +11,7 @@ import '../../../../core/widgets/hvp_toast.dart';
 import '../../../../core/widgets/inline_banner.dart';
 import '../../domain/branch_input.dart';
 import '../providers/branch_admin_providers.dart';
+import '../screens/branch_static_qr_screen.dart';
 import 'branch_reason_sheet.dart';
 
 /// BR-05: add a branch, or edit [branch].
@@ -118,6 +119,25 @@ class _BranchFormSheetState extends ConsumerState<BranchFormSheet> {
     Navigator.of(context).pop();
   }
 
+  /// BR-06: warns that printed codes stop working, rotates, then closes the form.
+  Future<void> _rotateQr(Branch branch) async {
+    final repo = ref.read(branchAdminRepositoryProvider);
+    final done = await showReasonSheet(
+      context,
+      title: 'Đổi mã QR',
+      warning: 'Mã QR đã in sẽ không còn dùng được. '
+          'Bạn cần in lại mã mới cho chi nhánh này.',
+      confirmLabel: 'Đổi mã QR',
+      required: false,
+      submit: branchRotateSubmitProvider,
+      onConfirm: (reason) => repo.rotateQr(branch.id, reason: reason),
+    );
+    if (!mounted || done != true) return;
+    ref.invalidate(adminBranchesProvider);
+    HvpToast.success(context, 'Đã đổi mã QR check-in.');
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final submit = ref.watch(branchFormSubmitProvider);
@@ -218,6 +238,24 @@ class _BranchFormSheetState extends ConsumerState<BranchFormSheet> {
                   onChanged: (v) => _toggleActive(widget.branch!, v),
                 ),
               ),
+            if (widget.branch != null) ...<Widget>[
+              Text('Mã QR: phiên bản ${widget.branch!.qrVersion ?? '1'}',
+                  style: context.txt.caption),
+              const SizedBox(height: 8),
+              HvpButton.secondary(
+                  label: 'Xem mã QR để in',
+                  expand: true,
+                  onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) => BranchStaticQrScreen(
+                              branchId: widget.branch!.id,
+                              branchName: widget.branch!.name)))),
+              const SizedBox(height: 8),
+              HvpButton.danger(
+                  label: 'Đổi mã QR',
+                  expand: true,
+                  onPressed: () => _rotateQr(widget.branch!)),
+            ],
           ],
         ),
       ),

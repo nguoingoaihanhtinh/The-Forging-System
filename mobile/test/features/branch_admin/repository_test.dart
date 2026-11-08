@@ -141,6 +141,36 @@ void main() {
     expect(b.isActive, isFalse);
   });
 
+  test('getQr and rotateQr map the payload and send the reason', () async {
+    final dio = createApiDio(
+      config: _config,
+      tokens: MemoryTokenStore(
+          const StoredTokens(accessToken: 'a', refreshToken: 'r')),
+    );
+    final adapter = ScriptedAdapter((o) => okEnvelope(<String, dynamic>{
+          'branchId': 'b9',
+          'code': 'Q9',
+          'qrVersion': '4',
+          'payload': 'HVP|Q9|4'
+        }));
+    dio.httpClientAdapter = adapter;
+    final repo = BranchAdminRepositoryImpl(BranchAdminApi(ApiClient(dio)));
+
+    final qr = await repo.getQr('b9');
+    expect(adapter.requests.last.path, '/branches/b9/qr');
+    expect(qr.payload, 'HVP|Q9|4');
+    expect(qr.qrVersion, '4');
+
+    await repo.rotateQr('b9');
+    expect(adapter.requests.last.method, 'POST');
+    expect(adapter.requests.last.path, '/admin/branches/b9/qr/rotate');
+    expect(adapter.requests.last.data, <String, dynamic>{});
+
+    await repo.rotateQr('b9', reason: 'Mất bảng QR');
+    expect(
+        adapter.requests.last.data, <String, dynamic>{'reason': 'Mất bảng QR'});
+  });
+
   test('BranchRules follow the API limits', () {
     expect(BranchRules.code('q1'), isNull);
     expect(BranchRules.code('a'), isNotNull);

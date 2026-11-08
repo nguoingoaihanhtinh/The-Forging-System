@@ -2,6 +2,7 @@ import '../../../core/branch/branch.dart';
 import '../../../core/utils/json_utils.dart';
 import '../domain/branch_admin_repository.dart';
 import '../domain/branch_input.dart';
+import '../domain/branch_qr.dart';
 import 'branch_admin_api.dart';
 
 class BranchAdminRepositoryImpl implements BranchAdminRepository {
@@ -31,6 +32,23 @@ class BranchAdminRepositoryImpl implements BranchAdminRepository {
       Branch.fromJson((await _api.setStatus(branchId,
               <String, dynamic>{'isActive': isActive, 'reason': reason}))
           .dataMap);
+
+  @override
+  Future<BranchQr> getQr(String branchId) async =>
+      _qr((await _api.qr(branchId)).dataMap);
+
+  @override
+  Future<BranchQr> rotateQr(String branchId, {String? reason}) async =>
+      _qr((await _api.rotateQr(branchId,
+              <String, dynamic>{if (reason != null) 'reason': reason}))
+          .dataMap);
+
+  BranchQr _qr(JsonMap j) => BranchQr(
+        branchId: str(j, 'branchId'),
+        code: str(j, 'code'),
+        qrVersion: str(j, 'qrVersion', '1'),
+        payload: str(j, 'payload'),
+      );
 
   Map<String, dynamic> _body(BranchInput i) => <String, dynamic>{
         'code': i.code.trim(),

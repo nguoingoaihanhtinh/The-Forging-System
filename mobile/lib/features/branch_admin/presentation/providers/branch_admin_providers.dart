@@ -7,6 +7,7 @@ import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/branch_admin_api.dart';
 import '../../data/branch_admin_repository_impl.dart';
 import '../../domain/branch_admin_repository.dart';
+import '../../domain/branch_qr.dart';
 
 /// Tests override this with a fake repository.
 final branchAdminRepositoryProvider = Provider<BranchAdminRepository>(
@@ -37,4 +38,15 @@ final branchFormSubmitProvider =
 
 /// Submit state of the activate/deactivate reason sheet.
 final branchStatusSubmitProvider =
+    NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+/// The printable QR of one branch.
+final branchStaticQrProvider =
+    FutureProvider.autoDispose.family<BranchQr, String>((ref, branchId) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(branchAdminRepositoryProvider).getQr(branchId);
+});
+
+/// Submit state of the rotate-QR dialog.
+final branchRotateSubmitProvider =
     NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);

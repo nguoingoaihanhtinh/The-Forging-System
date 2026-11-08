@@ -1,5 +1,6 @@
 import '../../../core/branch/branch.dart';
 import 'branch_input.dart';
+import 'branch_qr.dart';
 
 /// What the admin branch screens need from the backend.
 abstract class BranchAdminRepository {
@@ -15,6 +16,12 @@ abstract class BranchAdminRepository {
   /// `POST /admin/branches/:id/status`; [reason] is required by the API (3-500 characters).
   Future<Branch> setActive(String branchId,
       {required bool isActive, required String reason});
+
+  /// `GET /branches/:id/qr`.
+  Future<BranchQr> getQr(String branchId);
+
+  /// `POST /admin/branches/:id/qr/rotate`; every printed code stops working. [reason] is optional.
+  Future<BranchQr> rotateQr(String branchId, {String? reason});
 }
 
 /// Branches to show: all, or only the active ones.
