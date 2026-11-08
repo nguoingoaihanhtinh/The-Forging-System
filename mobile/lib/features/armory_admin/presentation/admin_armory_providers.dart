@@ -26,7 +26,10 @@ final adminArmoryTiersProvider =
   (ref) => ref.watch(adminArmoryRepositoryProvider).tiers(),
 );
 
-final adminArmoryRewardsProvider =
-    FutureProvider.autoDispose<AdminArmoryRewardPage>(
-  (ref) => ref.watch(adminArmoryRepositoryProvider).rewards(),
+final adminArmoryRewardsProvider = FutureProvider.autoDispose.family<
+    AdminArmoryRewardPage,
+    ({String query, String? tierCode, int page})>((ref, filter) =>
+  ref.watch(adminArmoryRepositoryProvider).rewards(
+    query: filter.query, tierCode: filter.tierCode, page: filter.page,
+  ),
 );

@@ -49,7 +49,7 @@ class _ReceptionStockTabState extends ConsumerState<ReceptionStockTab>
             children: <Widget>[
               Text('Kho quà', style: t.titleL),
               const SizedBox(height: 4),
-              Text('Nhập, xuất kho và tra cứu lịch sử điều chỉnh.',
+              Text('Theo dõi tồn kho, điều chỉnh và tra cứu lịch sử.',
                   style: t.bodySmall),
             ],
           ),
@@ -57,7 +57,7 @@ class _ReceptionStockTabState extends ConsumerState<ReceptionStockTab>
         TabBar(
           controller: _tabs,
           tabs: const <Widget>[
-            Tab(text: 'Nhập / xuất'),
+            Tab(text: 'Kho quà'),
             Tab(text: 'Lịch sử'),
           ],
         ),
@@ -65,7 +65,7 @@ class _ReceptionStockTabState extends ConsumerState<ReceptionStockTab>
           child: TabBarView(
             controller: _tabs,
             children: const <Widget>[
-              _StockAdjustTab(),
+              _StockCatalogTab(),
               _StockHistoryTab(),
             ],
           ),
@@ -75,8 +75,60 @@ class _ReceptionStockTabState extends ConsumerState<ReceptionStockTab>
   }
 }
 
+class _StockCatalogTab extends ConsumerStatefulWidget {
+  const _StockCatalogTab();
+
+  @override
+  ConsumerState<_StockCatalogTab> createState() => _StockCatalogTabState();
+}
+
+class _StockCatalogTabState extends ConsumerState<_StockCatalogTab> {
+  String _query = '';
+  int _page = 1;
+
+  Future<void> _adjust(InventoryReward reward, String movementType) async {
+    await showHvpSheet<void>(context, title: movementType == 'IN' ? 'Nhập kho' : 'Xuất kho', builder: (_) => SizedBox(
+      height: 560,
+      child: _StockAdjustTab(reward: reward, movementType: movementType),
+    ));
+    if (mounted) ref.invalidate(inventoryRewardsProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filter = (query: _query, page: _page);
+    return Column(children: <Widget>[
+      Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 4), child: HvpTextField(
+        label: 'Tìm quà trong kho', hint: 'Tên hoặc SKU', prefixIcon: HvpIcons.search,
+        onSubmitted: (value) => setState(() { _query = value.trim(); _page = 1; }),
+      )),
+      Expanded(child: AsyncBody<InventoryRewardPage>(
+        value: ref.watch(inventoryRewardsProvider(filter)), onRetry: () => ref.invalidate(inventoryRewardsProvider(filter)),
+        builder: (_, page) => RefreshIndicator(
+          onRefresh: () async { ref.invalidate(inventoryRewardsProvider(filter)); await ref.read(inventoryRewardsProvider(filter).future); },
+          child: page.items.isEmpty ? ListView(physics: const AlwaysScrollableScrollPhysics(), children: const <Widget>[SizedBox(height: 340, child: EmptyState(icon: HvpIcons.package, title: 'Chưa có phần quà', message: 'Danh sách phần quà trong kho sẽ hiện tại đây.'))])
+              : ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, HvpLayout.navClearance), children: <Widget>[
+                  Text('${page.total} phần quà · Trang ${page.page}/${page.totalPages}', style: context.txt.caption), const SizedBox(height: 8),
+                  for (final reward in page.items) Padding(padding: const EdgeInsets.only(bottom: 10), child: HvpCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+                    Row(children: <Widget>[Expanded(child: Text(reward.name, style: context.txt.titleS)), StatusChip(label: reward.isActive ? 'Đang bán' : 'Ngừng bán', tone: reward.isActive ? ChipTone.success : ChipTone.neutral)]),
+                    const SizedBox(height: 4), Text('${reward.sku} · Tồn kho ${formatInt(reward.stock)}', style: context.txt.bodySmall),
+                    const SizedBox(height: 12), Wrap(spacing: 8, children: <Widget>[
+                      HvpButton.primary(label: 'Nhập kho', icon: HvpIcons.plus, small: true, onPressed: () => _adjust(reward, 'IN')),
+                      HvpButton.secondary(label: 'Xuất kho', icon: HvpIcons.close, small: true, onPressed: () => _adjust(reward, 'OUT')),
+                    ]),
+                  ]))),
+                  if (page.totalPages > 1) _Pager(page: page.page, totalPages: page.totalPages, onPage: (value) => setState(() => _page = value)),
+                ]),
+        ),
+      )),
+    ]);
+  }
+}
+
 class _StockAdjustTab extends ConsumerStatefulWidget {
-  const _StockAdjustTab();
+  const _StockAdjustTab({required this.reward, required this.movementType});
+  final InventoryReward reward;
+  final String movementType;
 
   @override
   ConsumerState<_StockAdjustTab> createState() => _StockAdjustTabState();
@@ -85,8 +137,8 @@ class _StockAdjustTab extends ConsumerStatefulWidget {
 class _StockAdjustTabState extends ConsumerState<_StockAdjustTab> {
   final _quantity = TextEditingController();
   final _reason = TextEditingController();
-  InventoryReward? _reward;
-  String _movementType = 'IN';
+  late final InventoryReward _reward = widget.reward;
+  late String _movementType = widget.movementType;
   String? _formError;
 
   @override
@@ -96,28 +148,10 @@ class _StockAdjustTabState extends ConsumerState<_StockAdjustTab> {
     super.dispose();
   }
 
-  Future<void> _pickReward() async {
-    final reward = await showHvpSheet<InventoryReward>(
-      context,
-      title: 'Chọn phần quà',
-      builder: (_) => _RewardPickerSheet(selectedId: _reward?.id),
-    );
-    if (reward != null && mounted) {
-      setState(() {
-        _reward = reward;
-        _formError = null;
-      });
-    }
-  }
-
   Future<void> _submit() async {
     final reward = _reward;
     final quantity = int.tryParse(_quantity.text.trim());
     final reason = _reason.text.trim();
-    if (reward == null) {
-      setState(() => _formError = 'Chọn phần quà cần điều chỉnh.');
-      return;
-    }
     if (quantity == null || quantity < 1) {
       setState(() => _formError = 'Số lượng phải là số nguyên lớn hơn 0.');
       return;
@@ -138,13 +172,6 @@ class _StockAdjustTabState extends ConsumerState<_StockAdjustTab> {
         );
     if (!mounted || !success) return;
     setState(() {
-      _reward = InventoryReward(
-        id: reward.id,
-        sku: reward.sku,
-        name: reward.name,
-        stock: reward.stock + (inbound ? quantity : -quantity),
-        isActive: reward.isActive,
-      );
       _quantity.clear();
       _reason.clear();
     });
@@ -152,6 +179,7 @@ class _StockAdjustTabState extends ConsumerState<_StockAdjustTab> {
     ref.invalidate(inventoryMovementsProvider);
     HvpToast.success(
         context, '${inbound ? 'Đã nhập' : 'Đã xuất'} $quantity · ${reward.name}.');
+    Navigator.of(context).pop();
   }
 
   @override
@@ -163,10 +191,7 @@ class _StockAdjustTabState extends ConsumerState<_StockAdjustTab> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, HvpLayout.navClearance),
       children: <Widget>[
         HvpCard(
-          onTap: _pickReward,
-          semanticLabel: reward == null
-              ? 'Chọn phần quà'
-              : 'Phần quà ${reward.name}, tồn kho ${reward.stock}',
+          semanticLabel: 'Phần quà ${reward.name}, tồn kho ${reward.stock}',
           child: Row(
             children: <Widget>[
               Icon(HvpIcons.package, color: context.hvp.gold),
@@ -175,19 +200,15 @@ class _StockAdjustTabState extends ConsumerState<_StockAdjustTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(reward?.name ?? 'Chọn phần quà',
-                        style: t.titleS),
+                    Text(reward.name, style: t.titleS),
                     const SizedBox(height: 3),
                     Text(
-                      reward == null
-                          ? 'Bấm để tìm theo tên hoặc SKU'
-                          : '${reward.sku} · Tồn kho ${formatInt(reward.stock)}',
+                      '${reward.sku} · Tồn kho ${formatInt(reward.stock)}',
                       style: t.bodySmall,
                     ),
                   ],
                 ),
               ),
-              const Icon(HvpIcons.caretRight),
             ],
           ),
         ),
