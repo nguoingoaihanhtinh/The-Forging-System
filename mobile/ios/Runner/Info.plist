@@ -26,6 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>HVP dùng camera để quét mã QR check-in tại phòng tập.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>HVP cần quyền truy cập ảnh để cập nhật ảnh đại diện và gửi ảnh minh chứng.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
