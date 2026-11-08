@@ -8,6 +8,7 @@ import '../../features/reception_checkin/domain/member_hit.dart';
 import '../../features/reception_checkin/presentation/assisted_checkin_screen.dart';
 import '../../features/reception_checkin/presentation/member_today_screen.dart';
 import '../../features/reception_checkin/presentation/reception_checkin_tab.dart';
+import '../../features/reception_memberships/presentation/screens/reception_memberships_tab.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
 
@@ -29,12 +30,7 @@ List<RouteBase> receptionRoutes() => <RouteBase>[
             label: 'Gói tập',
             icon: HvpIcons.ticket,
             activeIcon: HvpIcons.ticketFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Gói tập',
-              owner: 'feature: reception_memberships',
-              icon: HvpIcons.ticket,
-              description: 'Yêu cầu, học viên và thống kê theo gói.',
-            ),
+            builder: (_) => const ReceptionMembershipsTab(),
           ),
           ShellTab(
             path: ReceptionPaths.stock,
