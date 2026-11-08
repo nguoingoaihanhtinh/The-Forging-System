@@ -25,6 +25,13 @@ class BranchAdminRepositoryImpl implements BranchAdminRepository {
   Future<Branch> update(String branchId, BranchInput input) async =>
       Branch.fromJson((await _api.update(branchId, _body(input))).dataMap);
 
+  @override
+  Future<Branch> setActive(String branchId,
+          {required bool isActive, required String reason}) async =>
+      Branch.fromJson((await _api.setStatus(branchId,
+              <String, dynamic>{'isActive': isActive, 'reason': reason}))
+          .dataMap);
+
   Map<String, dynamic> _body(BranchInput i) => <String, dynamic>{
         'code': i.code.trim(),
         'name': i.name.trim(),

@@ -14,4 +14,7 @@ class BranchAdminApi {
 
   Future<ApiEnvelope> update(String id, Map<String, dynamic> body) =>
       _api.patch('/admin/branches/$id', body: body);
+
+  Future<ApiEnvelope> setStatus(String id, Map<String, dynamic> body) =>
+      _api.post('/admin/branches/$id/status', body: body);
 }

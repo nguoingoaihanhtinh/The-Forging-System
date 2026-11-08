@@ -116,6 +116,31 @@ void main() {
     });
   });
 
+  test('setActive posts isActive and the reason', () async {
+    final dio = createApiDio(
+      config: _config,
+      tokens: MemoryTokenStore(
+          const StoredTokens(accessToken: 'a', refreshToken: 'r')),
+    );
+    final adapter = ScriptedAdapter((o) => okEnvelope(<String, dynamic>{
+          'id': 'b9',
+          'code': 'Q9',
+          'name': 'X',
+          'isActive': false
+        }));
+    dio.httpClientAdapter = adapter;
+    final repo = BranchAdminRepositoryImpl(BranchAdminApi(ApiClient(dio)));
+
+    final b = await repo.setActive('b9', isActive: false, reason: 'Đóng cửa');
+
+    final req = adapter.requests.single;
+    expect(req.method, 'POST');
+    expect(req.path, '/admin/branches/b9/status');
+    expect(
+        req.data, <String, dynamic>{'isActive': false, 'reason': 'Đóng cửa'});
+    expect(b.isActive, isFalse);
+  });
+
   test('BranchRules follow the API limits', () {
     expect(BranchRules.code('q1'), isNull);
     expect(BranchRules.code('a'), isNotNull);

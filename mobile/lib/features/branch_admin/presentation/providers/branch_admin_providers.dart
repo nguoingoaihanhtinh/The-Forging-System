@@ -34,3 +34,7 @@ final showInactiveBranchesProvider =
 /// Submit state of the add/edit branch form.
 final branchFormSubmitProvider =
     NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+/// Submit state of the activate/deactivate reason sheet.
+final branchStatusSubmitProvider =
+    NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);

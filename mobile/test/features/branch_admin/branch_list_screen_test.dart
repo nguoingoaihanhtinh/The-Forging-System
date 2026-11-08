@@ -27,6 +27,11 @@ class _FakeRepo implements BranchAdminRepository {
   @override
   Future<Branch> update(String branchId, BranchInput input) =>
       throw UnimplementedError();
+
+  @override
+  Future<Branch> setActive(String branchId,
+          {required bool isActive, required String reason}) =>
+      throw UnimplementedError();
 }
 
 Future<void> _pump(

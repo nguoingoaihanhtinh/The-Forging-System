@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/branch/branch.dart';
+import '../../../../core/design/hvp_context.dart';
 import '../../../../core/error/api_exception.dart';
 import '../../../../core/widgets/hvp_button.dart';
 import '../../../../core/widgets/hvp_text_field.dart';
@@ -10,6 +11,7 @@ import '../../../../core/widgets/hvp_toast.dart';
 import '../../../../core/widgets/inline_banner.dart';
 import '../../domain/branch_input.dart';
 import '../providers/branch_admin_providers.dart';
+import 'branch_reason_sheet.dart';
 
 /// BR-05: add a branch, or edit [branch].
 class BranchFormSheet extends ConsumerStatefulWidget {
@@ -91,6 +93,28 @@ class _BranchFormSheetState extends ConsumerState<BranchFormSheet> {
     ref.invalidate(adminBranchesProvider);
     HvpToast.success(
         context, editing == null ? 'Đã tạo chi nhánh' : 'Đã lưu thay đổi');
+    Navigator.of(context).pop();
+  }
+
+  /// Extra: the on/off switch asks for a reason, then closes the form.
+  Future<void> _toggleActive(Branch branch, bool isActive) async {
+    final repo = ref.read(branchAdminRepositoryProvider);
+    final done = await showReasonSheet(
+      context,
+      title: isActive ? 'Kích hoạt lại chi nhánh' : 'Ngừng hoạt động chi nhánh',
+      confirmLabel: isActive ? 'Kích hoạt lại' : 'Ngừng hoạt động',
+      required: true,
+      submit: branchStatusSubmitProvider,
+      onConfirm: (reason) =>
+          repo.setActive(branch.id, isActive: isActive, reason: reason!),
+    );
+    if (!mounted || done != true) return;
+    ref.invalidate(adminBranchesProvider);
+    HvpToast.success(
+        context,
+        isActive
+            ? 'Đã kích hoạt lại chi nhánh'
+            : 'Đã ngừng hoạt động chi nhánh');
     Navigator.of(context).pop();
   }
 
@@ -182,6 +206,18 @@ class _BranchFormSheetState extends ConsumerState<BranchFormSheet> {
                 expand: true,
                 loading: submit.submitting,
                 onPressed: submit.submitting ? null : _submit),
+            if (widget.branch != null)
+              // Material ancestor so the tile's ink shows above the sheet's decorated container.
+              Material(
+                type: MaterialType.transparency,
+                child: SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: widget.branch!.isActive,
+                  activeThumbColor: context.hvp.gold,
+                  title: Text('Đang hoạt động', style: context.txt.body),
+                  onChanged: (v) => _toggleActive(widget.branch!, v),
+                ),
+              ),
           ],
         ),
       ),

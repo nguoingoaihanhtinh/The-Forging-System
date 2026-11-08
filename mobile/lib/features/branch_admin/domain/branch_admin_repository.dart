@@ -11,6 +11,10 @@ abstract class BranchAdminRepository {
 
   /// `PATCH /admin/branches/:id`; empty optional fields are sent as null to clear them.
   Future<Branch> update(String branchId, BranchInput input);
+
+  /// `POST /admin/branches/:id/status`; [reason] is required by the API (3-500 characters).
+  Future<Branch> setActive(String branchId,
+      {required bool isActive, required String reason});
 }
 
 /// Branches to show: all, or only the active ones.
