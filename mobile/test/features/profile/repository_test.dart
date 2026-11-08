@@ -65,4 +65,28 @@ void main() {
           .having((e) => e.message, 'message', 'Không có hồ sơ học viên')),
     );
   });
+
+  test('updateProfile PATCHes only the given keys, null included', () async {
+    final t =
+        _build((o) => okEnvelope(<String, dynamic>{..._json, 'email': null}));
+
+    final p = await t.repo
+        .updateProfile(<String, Object?>{'email': null, 'fullName': 'B'});
+
+    final request = t.adapter.requests.single;
+    expect(request.method, 'PATCH');
+    expect(request.path, '/me/profile');
+    expect(request.data, <String, Object?>{'email': null, 'fullName': 'B'});
+    expect(p.email, isNull);
+  });
+
+  test('updateProfile surfaces PHONE_TAKEN', () async {
+    final t = _build((o) => errorEnvelope(
+        409, 'PHONE_TAKEN', 'Số điện thoại này đã được đăng ký.'));
+
+    expect(
+      t.repo.updateProfile(<String, Object?>{'phone': '0900000000'}),
+      throwsA(isA<ApiException>().having((e) => e.code, 'code', 'PHONE_TAKEN')),
+    );
+  });
 }

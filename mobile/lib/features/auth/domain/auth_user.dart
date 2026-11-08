@@ -60,6 +60,25 @@ class AuthUser {
   final String? branchId;
   final bool mustChangePassword;
 
+  /// Replaces the editable profile fields as they are (a null clears the value).
+  AuthUser withProfile({
+    required String fullName,
+    String? email,
+    String? phone,
+    String? avatarUrl,
+  }) =>
+      AuthUser(
+        id: id,
+        fullName: fullName,
+        email: email,
+        phone: phone,
+        avatarUrl: avatarUrl,
+        roles: roles,
+        appRole: appRole,
+        branchId: branchId,
+        mustChangePassword: mustChangePassword,
+      );
+
   AuthUser copyWith(
           {String? fullName,
           String? avatarUrl,

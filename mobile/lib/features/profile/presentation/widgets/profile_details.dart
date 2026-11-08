@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/design/hvp_context.dart';
+import '../../../../core/design/hvp_icons.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/async_body.dart';
 import '../../../../core/widgets/hvp_card.dart';
@@ -9,13 +10,21 @@ import '../../../../core/widgets/section_header.dart';
 import '../../../fighter_record/presentation/providers/fighter_record_providers.dart';
 import '../../domain/profile_models.dart';
 import '../providers/profile_providers.dart';
+import 'profile_edit_form.dart';
 
 /// AUTH-12: personal info of the student Hồ sơ tab.
-class ProfileDetails extends ConsumerWidget {
+class ProfileDetails extends ConsumerStatefulWidget {
   const ProfileDetails({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileDetails> createState() => _ProfileDetailsState();
+}
+
+class _ProfileDetailsState extends ConsumerState<ProfileDetails> {
+  bool _editing = false;
+
+  @override
+  Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider);
     // The rank name is not in the profile response: reuse the fighter record.
     final rank =
@@ -23,9 +32,20 @@ class ProfileDetails extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const SectionHeader(
-            title: 'Thông tin cá nhân',
-            padding: EdgeInsets.only(top: 20, bottom: 10)),
+        Row(
+          children: <Widget>[
+            const Expanded(
+                child: SectionHeader(
+                    title: 'Thông tin cá nhân',
+                    padding: EdgeInsets.only(top: 20, bottom: 10))),
+            if (profile.hasValue && !_editing)
+              IconButton(
+                tooltip: 'Chỉnh sửa hồ sơ',
+                icon: Icon(HvpIcons.pencil, color: context.hvp.gold),
+                onPressed: () => setState(() => _editing = true),
+              ),
+          ],
+        ),
         AsyncBody<MemberProfile>(
           value: profile,
           onRetry: () => ref.invalidate(profileProvider),
@@ -34,9 +54,18 @@ class ProfileDetails extends ConsumerWidget {
           builder: (_, p) => HvpCard(
             child: Column(
               children: <Widget>[
-                _InfoRow(label: 'Họ và tên', value: p.fullName),
-                _InfoRow(label: 'Số điện thoại', value: p.phone),
-                _InfoRow(label: 'Email', value: p.email),
+                if (_editing)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ProfileEditForm(
+                        profile: p,
+                        onDone: () => setState(() => _editing = false)),
+                  )
+                else ...<Widget>[
+                  _InfoRow(label: 'Họ và tên', value: p.fullName),
+                  _InfoRow(label: 'Số điện thoại', value: p.phone),
+                  _InfoRow(label: 'Email', value: p.email),
+                ],
                 _InfoRow(
                     label: 'Ngày tham gia',
                     value: p.joinedAt == null ? null : formatDate(p.joinedAt!)),

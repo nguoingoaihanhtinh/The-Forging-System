@@ -23,11 +23,21 @@ MemberProfile sampleProfile({
 class FakeProfileRepository implements ProfileRepository {
   Future<MemberProfile> Function() onGet = () async => sampleProfile();
 
+  Future<MemberProfile> Function(Map<String, Object?> changes) onUpdate =
+      (changes) async => sampleProfile();
+
   int getCalls = 0;
+  final List<Map<String, Object?>> updates = <Map<String, Object?>>[];
 
   @override
   Future<MemberProfile> getProfile() {
     getCalls++;
     return onGet();
+  }
+
+  @override
+  Future<MemberProfile> updateProfile(Map<String, Object?> changes) {
+    updates.add(changes);
+    return onUpdate(changes);
   }
 }
