@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/hvp_icons.dart';
 import '../../core/widgets/coming_soon_page.dart';
 import '../../features/auth/domain/auth_user.dart';
+import '../../features/coach_challenges/presentation/challenge_review_tab.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
 
@@ -40,12 +41,7 @@ List<RouteBase> coachRoutes() => <RouteBase>[
             label: 'Challenge',
             icon: HvpIcons.flag,
             activeIcon: HvpIcons.flagFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Challenge',
-              owner: 'feature: coach_challenge',
-              icon: HvpIcons.flag,
-              description: 'Duyệt bài nộp thử thách của học viên.',
-            ),
+            builder: (_) => const ChallengeReviewTab(),
           ),
           ShellTab(
             path: CoachPaths.rankTrial,

@@ -6,7 +6,11 @@ import '../../../core/design/hvp_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/async_body.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/evidence_photo_picker.dart';
+import '../../../core/widgets/hvp_bottom_sheet.dart';
+import '../../../core/widgets/hvp_button.dart';
 import '../../../core/widgets/hvp_card.dart';
+import '../../../core/widgets/inline_banner.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../domain/current_challenge.dart';
 import 'current_challenge_providers.dart';
@@ -44,7 +48,10 @@ class CurrentChallengesScreen extends ConsumerWidget {
                       'Khi tham gia thử thách đang mở, tiến độ sẽ xuất hiện tại đây.',
                 ),
               for (final challenge in items) ...<Widget>[
-                CurrentChallengeCard(challenge: challenge),
+                CurrentChallengeCard(
+                  challenge: challenge,
+                  onSubmitEvidence: () => _showEvidenceSheet(context, ref, challenge),
+                ),
                 const SizedBox(height: 12),
               ],
             ],
@@ -55,9 +62,19 @@ class CurrentChallengesScreen extends ConsumerWidget {
   }
 }
 
+Future<void> _showEvidenceSheet(BuildContext context, WidgetRef ref, CurrentChallenge challenge) async {
+  ref.read(challengeEvidenceActionProvider.notifier).reset();
+  await showHvpSheet<void>(
+    context,
+    title: 'Nộp bằng chứng',
+    builder: (_) => _EvidenceSheet(challenge: challenge),
+  );
+}
+
 class CurrentChallengeCard extends StatelessWidget {
-  const CurrentChallengeCard({super.key, required this.challenge});
+  const CurrentChallengeCard({super.key, required this.challenge, this.onSubmitEvidence});
   final CurrentChallenge challenge;
+  final VoidCallback? onSubmitEvidence;
 
   @override
   Widget build(BuildContext context) => HvpCard(
@@ -106,6 +123,10 @@ class CurrentChallengeCard extends StatelessWidget {
                 _detail(context, HvpIcons.coins,
                     '+${formatInt(challenge.rewardMarks)} Marks'),
               ]),
+              if (challenge.participationStatus == 'AWAITING_COACH') ...<Widget>[
+                const SizedBox(height: 14),
+                HvpButton.primary(label: 'Nộp bằng chứng', small: true, onPressed: onSubmitEvidence),
+              ],
             ]),
       );
 
@@ -138,4 +159,56 @@ class CurrentChallengeCard extends StatelessWidget {
         'EXPIRED' => ChipTone.danger,
         _ => ChipTone.info,
       };
+}
+
+class _EvidenceSheet extends ConsumerStatefulWidget {
+  const _EvidenceSheet({required this.challenge});
+  final CurrentChallenge challenge;
+
+  @override
+  ConsumerState<_EvidenceSheet> createState() => _EvidenceSheetState();
+}
+
+class _EvidenceSheetState extends ConsumerState<_EvidenceSheet> {
+  String? _url;
+
+  @override
+  void initState() {
+    super.initState();
+    _url = widget.challenge.evidenceUrl;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final action = ref.watch(challengeEvidenceActionProvider);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+        Text(widget.challenge.title, style: context.txt.titleS),
+        const SizedBox(height: 16),
+        EvidencePhotoPicker(initialUrl: widget.challenge.evidenceUrl, onChanged: (url) => setState(() => _url = url)),
+        if (action.error != null) ...<Widget>[
+          const SizedBox(height: 12),
+          InlineBanner(message: action.error!),
+        ],
+        const SizedBox(height: 20),
+        HvpButton.primary(
+          label: 'Gửi bằng chứng',
+          expand: true,
+          loading: action.submitting,
+          onPressed: _url == null || action.submitting
+              ? null
+              : () async {
+                  final navigator = Navigator.of(context);
+                  final ok = await ref.read(challengeEvidenceActionProvider.notifier).run(
+                        () => ref.read(currentChallengeRepositoryProvider).submitEvidence(widget.challenge.id, _url!),
+                      );
+                  if (!mounted || !ok) return;
+                  ref.invalidate(currentChallengesProvider);
+                  navigator.pop();
+                },
+        ),
+      ]),
+    );
+  }
 }

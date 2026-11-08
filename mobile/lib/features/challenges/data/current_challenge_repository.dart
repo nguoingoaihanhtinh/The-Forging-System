@@ -16,6 +16,7 @@ class CurrentChallengeRepositoryImpl implements CurrentChallengeRepository {
         .map((json) {
       return CurrentChallenge(
         id: str(json, 'id'),
+        participationId: str(json, 'participationId'),
         title: str(json, 'title'),
         challengeType: str(json, 'challengeType'),
         target: intOf(json, 'target'),
@@ -25,7 +26,14 @@ class CurrentChallengeRepositoryImpl implements CurrentChallengeRepository {
             DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
         participationStatus: str(json, 'participationStatus'),
         progressValue: intOf(json, 'progressValue'),
+        evidenceUrl: strOrNull(json, 'evidenceUrl'),
       );
     }).toList(growable: false);
   }
+
+  @override
+  Future<void> submitEvidence(String challengeId, String evidenceUrl) => _api.post(
+        '/me/challenges/$challengeId/evidence',
+        body: <String, dynamic>{'evidenceUrl': evidenceUrl},
+      );
 }
