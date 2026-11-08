@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/design/hvp_context.dart';
+import '../../../../core/design/hvp_icons.dart';
 import '../../../../core/widgets/async_body.dart';
 import '../../../../core/widgets/hvp_app_bar.dart';
 import '../../../../core/widgets/hvp_button.dart';
@@ -65,6 +66,21 @@ class MemberDetailScreen extends ConsumerWidget {
                       memberId: memberId,
                       memberName: overview.profile.fullName),
                 ),
+                if (nextStatusFor(overview.profile.status)
+                    case final next?) ...<Widget>[
+                  const SizedBox(height: 10),
+                  HvpButton.secondary(
+                    label: next == 'FROZEN' ? 'Đóng băng' : 'Mở lại (unfreeze)',
+                    icon: next == 'FROZEN'
+                        ? HvpIcons.snowflake
+                        : HvpIcons.lockOpen,
+                    expand: true,
+                    onPressed: () => askChangeStatus(context, ref,
+                        memberId: memberId,
+                        memberName: overview.profile.fullName,
+                        status: next),
+                  ),
+                ],
                 if (membership.pendingRenewal != null) ...<Widget>[
                   const SizedBox(height: 12),
                   HvpCard(

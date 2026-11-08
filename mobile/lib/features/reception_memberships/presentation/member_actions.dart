@@ -52,3 +52,29 @@ Future<void> askActivatePackage(BuildContext context, WidgetRef ref,
     HvpToast.success(context, message.isEmpty ? 'Đã kích hoạt gói.' : message);
   }
 }
+
+/// MEM-18: ask why, then freeze (`FROZEN`) or reopen (`ACTIVE`) the account of [memberId].
+Future<void> askChangeStatus(BuildContext context, WidgetRef ref,
+    {required String memberId,
+    required String memberName,
+    required String status}) async {
+  final freeze = status == 'FROZEN';
+  final done = await showReasonSheet(
+    context,
+    title: freeze ? 'Đóng băng tài khoản' : 'Mở lại tài khoản',
+    summary: memberName,
+    label: 'Lý do (bắt buộc)',
+    confirmLabel: freeze ? 'Đóng băng' : 'Mở lại',
+    emptyMessage: 'Vui lòng nhập lý do trước khi đổi trạng thái.',
+    destructive: freeze,
+    submit: (reason) => ref
+        .read(receptionMembershipsRepositoryProvider)
+        .changeStatus(memberId, status: status, reason: reason),
+  );
+  if (done != true) return;
+  ref.invalidate(memberOverviewProvider(memberId));
+  if (context.mounted) {
+    HvpToast.success(
+        context, freeze ? 'Đã đóng băng tài khoản.' : 'Đã mở lại tài khoản.');
+  }
+}

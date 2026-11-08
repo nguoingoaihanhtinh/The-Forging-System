@@ -47,4 +47,9 @@ class ReceptionMembershipsApi {
   Future<ApiEnvelope> createMember(String fullName, String phone) =>
       _api.post('/members',
           body: <String, dynamic>{'fullName': fullName, 'phone': phone});
+
+  Future<ApiEnvelope> changeStatus(
+          String memberId, String status, String reason) =>
+      _api.post('/members/$memberId/status',
+          body: <String, dynamic>{'status': status, 'reason': reason});
 }

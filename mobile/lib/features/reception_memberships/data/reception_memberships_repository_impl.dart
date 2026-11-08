@@ -70,4 +70,10 @@ class ReceptionMembershipsRepositoryImpl
   Future<CreatedMember> createMember(
           {required String fullName, required String phone}) async =>
       createdMemberFromJson((await _api.createMember(fullName, phone)).dataMap);
+
+  @override
+  Future<void> changeStatus(String memberId,
+      {required String status, required String reason}) async {
+    await _api.changeStatus(memberId, status, reason);
+  }
 }

@@ -116,4 +116,14 @@ void main() {
     expect(desk.calls('POST /members').single.data,
         <String, dynamic>{'fullName': 'Lê Mới', 'phone': '0912345678'});
   });
+
+  test('MEM-18 changeStatus posts the status and reason (204 answer)',
+      () async {
+    boot(<String, Reply>{
+      'POST /members/m1/status': (_) => jsonResponse(204, <String, dynamic>{})
+    });
+    await repo.changeStatus('m1', status: 'FROZEN', reason: 'Đi công tác');
+    expect(desk.calls('POST /members/m1/status').single.data,
+        <String, dynamic>{'status': 'FROZEN', 'reason': 'Đi công tác'});
+  });
 }

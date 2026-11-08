@@ -13,3 +13,11 @@ String packageTypeSummary(PackageType p) => <String>[
           ? 'không giới hạn buổi'
           : '${p.totalSessions} buổi',
     ].join(' · ');
+
+/// The status the desk may move an account to. Reception never sets INACTIVE: it can only
+/// freeze an active account or reopen a frozen one (an inactive one comes back with a package).
+String? nextStatusFor(String status) => switch (status) {
+      'ACTIVE' => 'FROZEN',
+      'FROZEN' => 'ACTIVE',
+      _ => null,
+    };

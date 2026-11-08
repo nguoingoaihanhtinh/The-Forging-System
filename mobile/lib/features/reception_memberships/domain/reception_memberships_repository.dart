@@ -30,4 +30,8 @@ abstract interface class ReceptionMembershipsRepository {
   /// `POST /members`
   Future<CreatedMember> createMember(
       {required String fullName, required String phone});
+
+  /// `POST /members/:memberId/status` with [status] `ACTIVE` or `FROZEN`.
+  Future<void> changeStatus(String memberId,
+      {required String status, required String reason});
 }
