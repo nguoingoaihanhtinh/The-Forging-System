@@ -275,6 +275,10 @@ Chỉ `RECEPTIONIST`, `ADMIN`, `SUPER_ADMIN`.
 - Filter tùy chọn: `status`, `branchId`, `q` (mã redemption, mã học viên hoặc họ tên), `page`, `limit`.
 - Kết quả ưu tiên `READY_PICKUP`, sau đó `PENDING_PICKUP`; trả thông tin đơn, học viên, quà và chi nhánh nhận cùng `meta` phân trang.
 
+## Mobile Reception
+
+Tab **Giao quà** gọi API list theo trạng thái, cho phép duyệt đơn `PENDING_PICKUP`, giao đơn `READY_PICKUP` và từ chối đơn đang mở. Sau mỗi thao tác, danh sách được tải lại; lý do từ chối là bắt buộc.
+
 
 ---
 
