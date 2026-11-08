@@ -18,6 +18,7 @@ import '../class_providers.dart';
 import '../widgets/class_form_sheet.dart';
 import '../widgets/class_sessions_section.dart';
 import '../widgets/enrol_member_sheet.dart';
+import '../widgets/exam_session_sheet.dart';
 
 /// CLS-08: one class with its roster; enrol and remove learners.
 class ClassDetailScreen extends ConsumerWidget {
@@ -86,6 +87,12 @@ class ClassDetailScreen extends ConsumerWidget {
                             style: t.bodySmall),
                       ]),
                 ),
+                const SizedBox(height: 12),
+                HvpButton.secondary(
+                    label: '＋ Buổi kiểm tra',
+                    expand: true,
+                    onPressed: () => showExamSheet(context,
+                        classId: classId, className: c.name)),
                 ClassSessionsSection(classId: classId),
                 SectionHeader(title: 'Học viên (${d.roster.length})'),
                 HvpButton.primary(

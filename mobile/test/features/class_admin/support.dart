@@ -161,6 +161,18 @@ class FakeClassRepository implements ClassRepository {
     cancelled.add('$sessionId|$reason');
   }
 
+  final sessionsCreated = <SessionDraft>[];
+  final exams = <String>[];
+
+  @override
+  Future<void> createSession(SessionDraft draft) async =>
+      sessionsCreated.add(draft);
+
+  @override
+  Future<void> createExamSession(String classId, String date,
+          {String? title}) async =>
+      exams.add('$classId|$date|$title');
+
   @override
   Future<List<ClassCoach>> coaches() async =>
       const <ClassCoach>[ClassCoach('k1', 'Mai Nguyễn')];

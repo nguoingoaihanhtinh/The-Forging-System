@@ -21,6 +21,11 @@ abstract interface class ClassRepository {
 
   Future<void> cancelSession(String sessionId, String reason);
 
+  Future<void> createSession(SessionDraft draft);
+
+  /// Exam session of a class on [date] (`YYYY-MM-DD`, local); [title] defaults on the server.
+  Future<void> createExamSession(String classId, String date, {String? title});
+
   /// Coaches and head coaches, for pickers and for naming a class's coach.
   Future<List<ClassCoach>> coaches();
 }

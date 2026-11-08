@@ -14,6 +14,7 @@ import '../../domain/session_types.dart';
 import '../class_providers.dart';
 import '../widgets/class_form_sheet.dart';
 import '../widgets/class_tile.dart';
+import '../widgets/session_form_sheet.dart';
 
 /// CLS-06: admin class list (tab "Đào tạo") with session type filter pills.
 class ClassListScreen extends ConsumerStatefulWidget {
@@ -39,6 +40,10 @@ class _ClassListScreenState extends ConsumerState<ClassListScreen> {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Row(children: <Widget>[
               Expanded(child: Text('LỚP HỌC', style: context.txt.titleL)),
+              IconButton(
+                  tooltip: 'Tạo buổi',
+                  icon: const Icon(HvpIcons.calendar),
+                  onPressed: () => showSessionForm(context)),
               IconButton(
                   tooltip: 'Tạo lớp',
                   icon: const Icon(HvpIcons.plus),

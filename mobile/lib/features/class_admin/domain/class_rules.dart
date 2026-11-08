@@ -1,3 +1,5 @@
+import '../../../core/utils/formatters.dart';
+
 const List<String> _weekdayShort = <String>[
   'T2',
   'T3',
@@ -53,3 +55,22 @@ bool canCancelSession(String status, DateTime startsAt, DateTime now) =>
 
 String? validateCancelReason(String? v) =>
     (v ?? '').trim().isEmpty ? 'Vui lòng nhập lý do huỷ.' : null;
+
+/// The instant of [day] at `HH:mm` Vietnam wall-clock time (UTC+7). Only the
+/// y/m/d of [day] count, whatever its own timezone.
+DateTime vietnamInstant(DateTime day, String hhmm) {
+  final parts = hhmm.split(':');
+  return DateTime.utc(day.year, day.month, day.day, int.parse(parts[0]),
+          int.parse(parts[1]))
+      .subtract(vietnamOffset);
+}
+
+String? validateSessionTitle(String? v) =>
+    (v ?? '').trim().isEmpty ? 'Nhập tiêu đề buổi.' : null;
+
+String? validateSessionDuration(String? v) {
+  final n = int.tryParse((v ?? '').trim());
+  return n != null && n >= 15 && n <= 480
+      ? null
+      : 'Thời lượng từ 15 đến 480 phút.';
+}

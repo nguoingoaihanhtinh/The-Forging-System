@@ -185,3 +185,42 @@ class ClassSession {
   final int attendeeCount;
   final String? coachName;
 }
+
+/// Body of `POST /sessions` (CLS-09): a one-off or Academy session.
+class SessionDraft {
+  const SessionDraft({
+    required this.sessionTypeCode,
+    required this.branchId,
+    required this.startsAt,
+    required this.durationMinutes,
+    required this.title,
+    required this.isExam,
+    this.coachId,
+    this.capacity,
+    this.notes,
+  });
+
+  final String sessionTypeCode;
+  final String branchId;
+
+  /// The instant the session starts (see `vietnamInstant`).
+  final DateTime startsAt;
+  final int durationMinutes;
+  final String title;
+  final bool isExam;
+  final String? coachId;
+  final int? capacity;
+  final String? notes;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'sessionTypeCode': sessionTypeCode,
+        'branchId': branchId,
+        'startsAt': startsAt.toUtc().toIso8601String(),
+        'durationMinutes': durationMinutes,
+        'title': title.trim(),
+        'isExam': isExam,
+        if (coachId != null) 'coachId': coachId,
+        if (capacity != null) 'capacity': capacity,
+        if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
+      };
+}

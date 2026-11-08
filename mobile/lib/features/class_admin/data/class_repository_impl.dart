@@ -67,6 +67,20 @@ class ClassRepositoryImpl implements ClassRepository {
   }
 
   @override
+  Future<void> createSession(SessionDraft draft) async {
+    await _api.post('/sessions', body: draft.toJson());
+  }
+
+  @override
+  Future<void> createExamSession(String classId, String date,
+      {String? title}) async {
+    await _api.post('/classes/$classId/exam-sessions', body: <String, dynamic>{
+      'date': date,
+      if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
+    });
+  }
+
+  @override
   Future<List<ClassCoach>> coaches() async {
     final result = <ClassCoach>[];
     for (final role in const <String>['COACH', 'HEAD_COACH']) {
