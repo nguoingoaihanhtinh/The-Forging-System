@@ -30,7 +30,7 @@ class AdminSettingsPage extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         HvpCard(
-          onTap: () => context.push(AdminPaths.armoryTiers),
+          onTap: () => context.push(AdminPaths.armory),
           child: Row(
             children: <Widget>[
               Icon(HvpIcons.armory, color: c.gold),

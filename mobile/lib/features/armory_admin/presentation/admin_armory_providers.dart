@@ -11,3 +11,22 @@ final adminArmoryRepositoryProvider = Provider<AdminArmoryRepository>(
 
 final createArmoryTierSubmitProvider =
     NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+final updateArmoryTierSubmitProvider =
+    NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+final createArmoryRewardSubmitProvider =
+    NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+final updateArmoryRewardSubmitProvider =
+    NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+final adminArmoryTiersProvider =
+    FutureProvider.autoDispose<List<AdminArmoryTier>>(
+  (ref) => ref.watch(adminArmoryRepositoryProvider).tiers(),
+);
+
+final adminArmoryRewardsProvider =
+    FutureProvider.autoDispose<AdminArmoryRewardPage>(
+  (ref) => ref.watch(adminArmoryRepositoryProvider).rewards(),
+);

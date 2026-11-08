@@ -12,7 +12,9 @@ import '../admin_armory_providers.dart';
 
 /// Creates an Armory tier. Tier lists, details and editing are separate work.
 class AdminArmoryTiersScreen extends ConsumerStatefulWidget {
-  const AdminArmoryTiersScreen({super.key});
+  const AdminArmoryTiersScreen({super.key, this.tier});
+
+  final AdminArmoryTier? tier;
 
   @override
   ConsumerState<AdminArmoryTiersScreen> createState() =>
@@ -22,17 +24,28 @@ class AdminArmoryTiersScreen extends ConsumerStatefulWidget {
 class _AdminArmoryTiersScreenState
     extends ConsumerState<AdminArmoryTiersScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _code = TextEditingController();
-  final _name = TextEditingController();
-  final _minMarks = TextEditingController();
-  final _maxMarks = TextEditingController();
-  final _sortOrder = TextEditingController(text: '0');
+  late final _code = TextEditingController(text: widget.tier?.code ?? '');
+  late final _name = TextEditingController(text: widget.tier?.name ?? '');
+  late final _minMarks =
+      TextEditingController(text: widget.tier?.minMarks.toString() ?? '');
+  late final _maxMarks =
+      TextEditingController(text: widget.tier?.maxMarks?.toString() ?? '');
+  late final _sortOrder =
+      TextEditingController(text: widget.tier?.sortOrder.toString() ?? '0');
+  final _reason = TextEditingController();
+
+  bool get _isEdit => widget.tier != null;
 
   @override
   void initState() {
     super.initState();
     Future<void>.microtask(
-      () => ref.read(createArmoryTierSubmitProvider.notifier).reset(),
+      () => ref
+          .read((_isEdit
+                  ? updateArmoryTierSubmitProvider
+                  : createArmoryTierSubmitProvider)
+              .notifier)
+          .reset(),
     );
   }
 
@@ -43,6 +56,7 @@ class _AdminArmoryTiersScreenState
     _minMarks.dispose();
     _maxMarks.dispose();
     _sortOrder.dispose();
+    _reason.dispose();
     super.dispose();
   }
 
@@ -73,28 +87,45 @@ class _AdminArmoryTiersScreenState
       );
       return;
     }
-    final input = CreateArmoryTierInput(
-      code: _code.text,
-      name: _name.text,
-      minMarks: minMarks,
-      maxMarks: maxMarks,
-      sortOrder: _integer(_sortOrder.text)!,
-    );
-    final success = await ref.read(createArmoryTierSubmitProvider.notifier).run(
-          () => ref.read(adminArmoryRepositoryProvider).createTier(input),
-        );
+    final repository = ref.read(adminArmoryRepositoryProvider);
+    final success = _isEdit
+        ? await ref.read(updateArmoryTierSubmitProvider.notifier).run(
+              () => repository.updateTier(
+                widget.tier!.code,
+                UpdateArmoryTierInput(
+                  name: _name.text,
+                  minMarks: minMarks,
+                  maxMarks: maxMarks,
+                  sortOrder: _integer(_sortOrder.text)!,
+                  reason: _reason.text,
+                ),
+              ),
+            )
+        : await ref.read(createArmoryTierSubmitProvider.notifier).run(
+              () => repository.createTier(CreateArmoryTierInput(
+                code: _code.text,
+                name: _name.text,
+                minMarks: minMarks,
+                maxMarks: maxMarks,
+                sortOrder: _integer(_sortOrder.text)!,
+              )),
+            );
     if (!mounted || !success) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã tạo tier quà.')),
+      SnackBar(
+          content:
+              Text(_isEdit ? 'Đã cập nhật tier quà.' : 'Đã tạo tier quà.')),
     );
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    final submit = ref.watch(createArmoryTierSubmitProvider);
+    final submit = ref.watch(_isEdit
+        ? updateArmoryTierSubmitProvider
+        : createArmoryTierSubmitProvider);
     return Scaffold(
-      appBar: const HvpAppBar(title: 'Tạo tier Armory'),
+      appBar: HvpAppBar(title: _isEdit ? 'Chi tiết tier' : 'Tạo tier Armory'),
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -117,6 +148,7 @@ class _AdminArmoryTiersScreenState
                   hint: 'Ví dụ: BRONZE',
                   maxLength: 50,
                   textInputAction: TextInputAction.next,
+                  readOnly: _isEdit,
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9_]')),
                     TextInputFormatter.withFunction(
@@ -184,13 +216,25 @@ class _AdminArmoryTiersScreenState
                   validator: (value) =>
                       _nonNegative(value, label: 'Thứ tự', max: 32767),
                 ),
+                if (_isEdit) ...<Widget>[
+                  const SizedBox(height: 16),
+                  HvpTextField(
+                    label: 'Lý do cập nhật',
+                    controller: _reason,
+                    maxLength: 500,
+                    textInputAction: TextInputAction.done,
+                    validator: (value) => (value?.trim().length ?? 0) >= 3
+                        ? null
+                        : 'Nhập lý do ít nhất 3 ký tự.',
+                  ),
+                ],
                 if (submit.error != null) ...<Widget>[
                   const SizedBox(height: 18),
                   InlineBanner(message: submit.error!),
                 ],
                 const SizedBox(height: 28),
                 HvpButton.primary(
-                  label: 'Tạo tier',
+                  label: _isEdit ? 'Lưu thay đổi' : 'Tạo tier',
                   expand: true,
                   loading: submit.submitting,
                   onPressed: submit.submitting ? null : _submit,

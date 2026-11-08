@@ -13,6 +13,31 @@ class FakeAdminArmoryRepository implements AdminArmoryRepository {
   Future<void> createTier(CreateArmoryTierInput input) async {
     created = input;
   }
+
+  @override
+  Future<List<AdminArmoryTier>> tiers() async => const <AdminArmoryTier>[];
+
+  @override
+  Future<void> updateTier(String code, UpdateArmoryTierInput input) async {}
+
+  @override
+  Future<AdminArmoryRewardPage> rewards({
+    String? query,
+    String? tierCode,
+    bool? isActive,
+    int page = 1,
+  }) async =>
+      const AdminArmoryRewardPage(
+          items: <AdminArmoryReward>[], page: 1, totalPages: 1);
+
+  @override
+  Future<AdminArmoryReward> reward(String id) => throw UnimplementedError();
+
+  @override
+  Future<void> createReward(CreateArmoryRewardInput input) async {}
+
+  @override
+  Future<void> updateReward(String id, UpdateArmoryRewardInput input) async {}
 }
 
 void main() {
