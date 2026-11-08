@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/branch/branch.dart';
 import '../../../../core/network/network_providers.dart';
+import '../../../../core/state/submit_notifier.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/branch_admin_api.dart';
 import '../../data/branch_admin_repository_impl.dart';
@@ -29,3 +30,7 @@ class ShowInactiveNotifier extends Notifier<bool> {
 
 final showInactiveBranchesProvider =
     NotifierProvider<ShowInactiveNotifier, bool>(ShowInactiveNotifier.new);
+
+/// Submit state of the add/edit branch form.
+final branchFormSubmitProvider =
+    NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);

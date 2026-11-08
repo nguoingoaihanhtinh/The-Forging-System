@@ -10,8 +10,10 @@ import '../../../../core/widgets/hvp_app_bar.dart';
 import '../../../../core/widgets/hvp_card.dart';
 import '../../../../core/widgets/hvp_refresh.dart';
 import '../../../../core/widgets/status_chip.dart';
+import '../../../../core/widgets/hvp_bottom_sheet.dart';
 import '../../domain/branch_admin_repository.dart';
 import '../providers/branch_admin_providers.dart';
+import '../widgets/branch_form_sheet.dart';
 
 /// Admin "Danh sách chi nhánh".
 class BranchListScreen extends ConsumerWidget {
@@ -27,7 +29,13 @@ class BranchListScreen extends ConsumerWidget {
     Future<void> refresh() => ref.refresh(adminBranchesProvider.future);
 
     return Scaffold(
-      appBar: const HvpAppBar(title: 'Chi nhánh'),
+      appBar: HvpAppBar(title: 'Chi nhánh', actions: <Widget>[
+        IconButton(
+          tooltip: 'Thêm chi nhánh',
+          icon: const Icon(HvpIcons.plus),
+          onPressed: () => _openForm(context),
+        ),
+      ]),
       body: Column(
         children: <Widget>[
           SwitchListTile(
@@ -62,7 +70,10 @@ class BranchListScreen extends ConsumerWidget {
                           itemCount: items.length,
                           separatorBuilder: (_, __) =>
                               const SizedBox(height: 12),
-                          itemBuilder: (_, i) => _BranchCard(branch: items[i]),
+                          itemBuilder: (_, i) => _BranchCard(
+                            branch: items[i],
+                            onTap: () => _openForm(context, items[i]),
+                          ),
                         ),
                 );
               },
@@ -74,16 +85,26 @@ class BranchListScreen extends ConsumerWidget {
   }
 }
 
+/// BR-05: the add form, or the edit form when [branch] is given.
+Future<void> _openForm(BuildContext context, [Branch? branch]) =>
+    showHvpSheet<void>(
+      context,
+      title: branch == null ? 'Thêm chi nhánh' : 'Sửa chi nhánh',
+      builder: (_) => BranchFormSheet(branch: branch),
+    );
+
 class _BranchCard extends StatelessWidget {
-  const _BranchCard({required this.branch});
+  const _BranchCard({required this.branch, required this.onTap});
 
   final Branch branch;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final t = context.txt;
     final line = branch.addressLine;
     return HvpCard(
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
