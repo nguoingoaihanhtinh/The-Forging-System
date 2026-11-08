@@ -29,6 +29,28 @@ class AdminSettingsPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+        HvpCard(
+          onTap: () => context.push(AdminPaths.armoryTiers),
+          child: Row(
+            children: <Widget>[
+              Icon(HvpIcons.armory, color: c.gold),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text('Tier Armory', style: t.titleS),
+                    const SizedBox(height: 2),
+                    Text('Tạo tier phân loại quà theo Marks.',
+                        style: t.bodySmall),
+                  ],
+                ),
+              ),
+              Icon(HvpIcons.caretRight, color: c.textMuted),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         Text('Quy tắc, hạng và nhật ký hệ thống: sắp ra mắt.',
             style: t.bodySmall),
       ],
