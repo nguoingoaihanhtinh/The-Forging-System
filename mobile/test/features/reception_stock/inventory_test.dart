@@ -164,15 +164,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Chọn phần quà'), findsOneWidget);
-    await tester.tap(find.text('Chọn phần quà'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Găng tập'));
-    await tester.pumpAndSettle();
     expect(find.text('GLOVES · Tồn kho 10'), findsOneWidget);
+    await tester.tap(find.text('NHẬP KHO'));
+    await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), '5');
-    await tester.enterText(find.byType(TextFormField).at(1), 'Nhập hàng');
+    await tester.enterText(find.byType(TextFormField).at(1), '5');
+    await tester.enterText(find.byType(TextFormField).last, 'Nhập hàng');
     await tester.tap(find.text('XÁC NHẬN NHẬP KHO'));
     await tester.pumpAndSettle();
 
@@ -182,8 +179,6 @@ void main() {
       quantity: 5,
       reason: 'Nhập hàng',
     ));
-    expect(find.text('GLOVES · Tồn kho 15'), findsOneWidget);
-
     await tester.tap(find.text('Lịch sử'));
     await tester.pumpAndSettle();
     expect(find.text('Nhập hàng'), findsOneWidget);

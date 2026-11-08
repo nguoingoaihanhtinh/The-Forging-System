@@ -97,6 +97,13 @@ List<RouteBase> adminRoutes() => <RouteBase>[
         builder: (context, state) => const AdminArmoryManagementScreen(),
       ),
       GoRoute(
+        path: AdminPaths.armoryRewards,
+        builder: (context, state) => AdminArmoryManagementScreen(
+          initialTab: 1,
+          initialTierCode: state.uri.queryParameters['tierCode'],
+        ),
+      ),
+      GoRoute(
         path: AdminPaths.armoryTierCreate,
         builder: (context, state) => const AdminArmoryTiersScreen(),
       ),
