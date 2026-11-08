@@ -17,6 +17,7 @@ class _FakeCurrentChallenges implements CurrentChallengeRepository {
   Future<List<CurrentChallenge>> list() async => <CurrentChallenge>[
         CurrentChallenge(
           id: 'challenge-1',
+          participationId: 'participation-1',
           title: 'Bao cát bền bỉ',
           challengeType: 'WEEKLY',
           target: 5,
@@ -27,6 +28,9 @@ class _FakeCurrentChallenges implements CurrentChallengeRepository {
           progressValue: 2,
         ),
       ];
+
+  @override
+  Future<void> submitEvidence(String challengeId, String evidenceUrl) async {}
 }
 
 void main() {
@@ -97,4 +101,66 @@ void main() {
     expect(find.textContaining('Hạn: 10/11/2026 19:00'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  test('CHL-06 posts the evidence URL for the selected challenge', () async {
+    final dio = createApiDio(
+      config: const AppConfig(
+          apiBaseUrl: 'http://test.local/api/v1', tenantCode: 'hvp'),
+      tokens: MemoryTokenStore(const StoredTokens(
+          accessToken: 'member-token', refreshToken: 'refresh-token')),
+    );
+    final adapter = ScriptedAdapter(
+      (_) => okEnvelope(<String, dynamic>{'id': 'participation-1'}),
+    );
+    dio.httpClientAdapter = adapter;
+
+    await CurrentChallengeRepositoryImpl(ApiClient(dio))
+        .submitEvidence('challenge-1', 'http://test.local/files/proof.jpg');
+
+    expect(adapter.requests.single.path, '/me/challenges/challenge-1/evidence');
+    expect(adapter.requests.single.data,
+        <String, dynamic>{'evidenceUrl': 'http://test.local/files/proof.jpg'});
+  });
+
+  testWidgets('CHL-06 lets a learner open the evidence sheet when awaiting review',
+      (tester) async {
+    await pumpHvp(
+      tester,
+      const CurrentChallengesScreen(),
+      overrides: [
+        currentUserIdProvider.overrideWithValue('member'),
+        currentChallengeRepositoryProvider
+            .overrideWithValue(_AwaitingCoachChallenges()),
+      ],
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('CHỜ XÁC NHẬN'), findsOneWidget);
+    await tester.tap(find.text('NỘP BẰNG CHỨNG'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('GỬI BẰNG CHỨNG'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}
+
+class _AwaitingCoachChallenges implements CurrentChallengeRepository {
+  @override
+  Future<List<CurrentChallenge>> list() async => <CurrentChallenge>[
+        CurrentChallenge(
+          id: 'challenge-1',
+          participationId: 'participation-1',
+          title: 'Bao cát bền bỉ',
+          challengeType: 'WEEKLY',
+          target: 5,
+          rewardDp: 50,
+          rewardMarks: 25,
+          endsAt: DateTime.utc(2026, 11, 10, 12),
+          participationStatus: 'AWAITING_COACH',
+          progressValue: 5,
+        ),
+      ];
+
+  @override
+  Future<void> submitEvidence(String challengeId, String evidenceUrl) async {}
 }
