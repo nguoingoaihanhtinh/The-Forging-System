@@ -22,6 +22,20 @@ export const redemptionHistoryQuery = paginationQuery
   })
   .strict();
 export type RedemptionHistoryFilter = Pick<z.infer<typeof redemptionHistoryQuery>, 'status'>;
+
+export const staffRedemptionQuery = paginationQuery
+  .extend({
+    status: z
+      .enum(['PENDING_PICKUP', 'READY_PICKUP', 'DELIVERED', 'REJECTED', 'CANCELLED', 'EXPIRED'])
+      .optional(),
+    branchId: uuid.optional(),
+    q: z.string().trim().min(1).max(100).optional(),
+  })
+  .strict();
+export type StaffRedemptionFilter = Pick<
+  z.infer<typeof staffRedemptionQuery>,
+  'status' | 'branchId' | 'q'
+>;
 export const cancelBody = z.object({ reason: z.string().trim().min(3).max(500).optional() }).strict();
 export const decisionBody = z.discriminatedUnion('status', [
   z

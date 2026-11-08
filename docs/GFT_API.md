@@ -260,6 +260,21 @@ Body bắt buộc:
 - Marks chưa bị debit trước khi giao; do đó API giải phóng hold, làm Marks khả dụng của học viên tăng lại, thay vì tạo transaction hoàn tiền.
 - Retry khi đơn đã `REJECTED` trả `200` với `duplicate: true`.
 
+---
+
+# Danh sách đơn đổi quà cho lễ tân
+
+```http
+GET /api/v1/staff/armory/redemptions?status=READY_PICKUP&q=GIFT&page=1&limit=20
+```
+
+Chỉ `RECEPTIONIST`, `ADMIN`, `SUPER_ADMIN`.
+
+- Lễ tân luôn chỉ xem đơn có `pickupBranchId` thuộc chi nhánh trong token; query `branchId` của lễ tân bị bỏ qua.
+- Admin/Super Admin có thể truyền `branchId` để lọc mọi chi nhánh.
+- Filter tùy chọn: `status`, `branchId`, `q` (mã redemption, mã học viên hoặc họ tên), `page`, `limit`.
+- Kết quả ưu tiên `READY_PICKUP`, sau đó `PENDING_PICKUP`; trả thông tin đơn, học viên, quà và chi nhánh nhận cùng `meta` phân trang.
+
 
 ---
 

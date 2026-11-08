@@ -28,6 +28,7 @@ describe('GFT-03 redemption approval', () => {
     transitionToReadyPickup: vi.fn(),
     transition: vi.fn(),
     restoreStock: vi.fn(),
+    staffList: vi.fn(),
   };
   const audit = { record: vi.fn() };
   const points = { award: vi.fn() };
@@ -117,5 +118,23 @@ describe('GFT-03 redemption approval', () => {
     expect(points.award).not.toHaveBeenCalled();
     expect(repo.restoreStock).toHaveBeenCalledWith(ready, reception.userId, 'Hết hàng tại quầy');
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'REDEMPTION_REJECTED' }));
+  });
+
+  it('limits receptionist list results to their assigned branch while admins may choose a branch', async () => {
+    vi.resetAllMocks();
+    repo.staffList.mockResolvedValue({ items: [], total: 0 });
+    await service.staffList({ status: 'READY_PICKUP', branchId: 'other-branch', q: 'GIFT' }, 20, 0, reception);
+    expect(repo.staffList).toHaveBeenCalledWith(
+      { status: 'READY_PICKUP', branchId: reception.branchId, q: 'GIFT' },
+      20,
+      0,
+    );
+    const admin = { userId: 'admin-1', roles: [Role.ADMIN], branchId: null };
+    await service.staffList({ status: 'READY_PICKUP', branchId: 'other-branch' }, 20, 0, admin);
+    expect(repo.staffList).toHaveBeenLastCalledWith(
+      { status: 'READY_PICKUP', branchId: 'other-branch' },
+      20,
+      0,
+    );
   });
 });

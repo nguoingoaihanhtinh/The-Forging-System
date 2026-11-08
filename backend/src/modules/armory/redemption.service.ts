@@ -15,6 +15,7 @@ import type {
   RejectPickupInput,
   RedemptionDecision,
   RedemptionHistoryFilter,
+  StaffRedemptionFilter,
 } from './redemption.validation';
 
 export class RedemptionService {
@@ -153,6 +154,18 @@ export class RedemptionService {
 
   history(memberId: string, filter: RedemptionHistoryFilter, limit: number, offset: number) {
     return this.repo.history(memberId, filter, limit, offset);
+  }
+
+  async staffList(filter: StaffRedemptionFilter, limit: number, offset: number, actor: AuthContext) {
+    const isAdmin = actor.roles.includes(Role.ADMIN) || actor.roles.includes(Role.SUPER_ADMIN);
+    if (!isAdmin && !actor.branchId) {
+      throw forbidden('Lễ tân chưa được gán chi nhánh.', 'STAFF_BRANCH_REQUIRED');
+    }
+    return this.repo.staffList(
+      { ...filter, branchId: isAdmin ? filter.branchId : actor.branchId! },
+      limit,
+      offset,
+    );
   }
 
   async detail(memberId: string, redemptionId: string) {

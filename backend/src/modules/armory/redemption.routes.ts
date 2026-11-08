@@ -15,10 +15,24 @@ import {
   decisionBody,
   redemptionHistoryQuery,
   redemptionIdParam,
+  staffRedemptionQuery,
 } from './redemption.validation';
 
 export function redemptionRoutes(service: RedemptionService): Router {
   const r = Router();
+  r.get(
+    '/staff/armory/redemptions',
+    requireAuth,
+    requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ query: staffRedemptionQuery }),
+    handle(async (req) => {
+      const query = req.query as unknown as z.infer<typeof staffRedemptionQuery>;
+      const page = toPage(query);
+      const { page: _page, limit: _limit, ...filter } = query;
+      const result = await service.staffList(filter, page.limit, page.offset, authOf(req));
+      return ok(result.items, pageMeta(page, result.total));
+    }),
+  );
   r.post(
     '/armory/redemptions',
     requireAuth,
