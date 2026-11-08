@@ -8,6 +8,7 @@ import '../../features/reception_checkin/domain/member_hit.dart';
 import '../../features/reception_checkin/presentation/assisted_checkin_screen.dart';
 import '../../features/reception_checkin/presentation/member_today_screen.dart';
 import '../../features/reception_checkin/presentation/reception_checkin_tab.dart';
+import '../../features/reception_gifts/presentation/gift_handover_tab.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
 
@@ -52,11 +53,7 @@ List<RouteBase> receptionRoutes() => <RouteBase>[
             label: 'Giao quà',
             icon: HvpIcons.gift,
             activeIcon: HvpIcons.giftFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Giao quà',
-              owner: 'feature: reception_handover',
-              icon: HvpIcons.gift,
-            ),
+            builder: (_) => const GiftHandoverTab(),
           ),
         ],
       ),

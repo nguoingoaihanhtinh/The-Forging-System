@@ -120,13 +120,13 @@ export class PointsService implements PointsPort, MarksWalletPort {
     }
 
     if (armoryDebit) {
-      // Serialize the order as well as the member. ARM-05 calls this before changing PENDING_PICKUP to DELIVERED.
+      // Serialize the order as well as the member. Delivery may debit a pending or ready pickup.
       const existing = await this.repo.findRedemptionDebit(input.redemptionId!);
       if (existing) return this.duplicateAward(existing, input);
       const redemption = await this.repo.redemptionForDebit(input.redemptionId!);
       if (!redemption || redemption.memberId !== input.memberId) throw notFound('Redemption');
-      if (!['PENDING_PICKUP', 'DELIVERED'].includes(redemption.status)) {
-        throw conflict('Only a pending or delivered redemption can be debited.', 'REDEMPTION_NOT_PAYABLE');
+      if (!['PENDING_PICKUP', 'READY_PICKUP', 'DELIVERED'].includes(redemption.status)) {
+        throw conflict('Only a pending, ready or delivered redemption can be debited.', 'REDEMPTION_NOT_PAYABLE');
       }
       if (redemption.marksCost !== -marks)
         throw badRequest(

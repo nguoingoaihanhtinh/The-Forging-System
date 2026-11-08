@@ -10,8 +10,12 @@ import type { MarksWalletPort, PointsPort } from '../points/points.service';
 import type { RedeemableReward, RedemptionRepository, RedemptionState } from './redemption.repository';
 import type {
   CreateRedemptionInput,
+  ApprovePickupInput,
+  DeliveryInput,
+  RejectPickupInput,
   RedemptionDecision,
   RedemptionHistoryFilter,
+  StaffRedemptionFilter,
 } from './redemption.validation';
 
 export class RedemptionService {
@@ -29,10 +33,7 @@ export class RedemptionService {
 
   async decide(id: string, input: RedemptionDecision, actor: AuthContext) {
     const order = await this.lockOrder(id);
-    const isAdmin = actor.roles.includes(Role.ADMIN) || actor.roles.includes(Role.SUPER_ADMIN);
-    if (!isAdmin && actor.branchId !== order.pickupBranchId) {
-      throw forbidden('Lễ tân chỉ xử lý đơn tại chi nhánh nhận.', 'PICKUP_BRANCH_MISMATCH');
-    }
+    this.assertPickupBranch(order, actor);
     if (order.status === input.status) return { redemption: order, duplicate: true };
     return this.close(
       order,
@@ -41,6 +42,56 @@ export class RedemptionService {
       input.reason ?? null,
       input.status === 'DELIVERED' ? (input.deliveryEvidenceUrl ?? null) : null,
     );
+  }
+
+  /** GFT-03: reception/admin approves a pending redemption for pickup. */
+  async approvePickup(id: string, input: ApprovePickupInput, actor: AuthContext) {
+    const order = await this.lockOrder(id);
+    this.assertPickupBranch(order, actor);
+    if (order.status === 'READY_PICKUP') return { redemption: order, duplicate: true };
+    if (order.status !== 'PENDING_PICKUP') {
+      throw conflict('Chỉ đơn chờ duyệt mới có thể chuyển sang sẵn sàng nhận.', 'REDEMPTION_NOT_PENDING');
+    }
+    const updated = await this.repo.transitionToReadyPickup(order.id, actor.userId, input.reason ?? null);
+    if (!updated) throw conflict('Đơn đã được xử lý.', 'REDEMPTION_NOT_PENDING');
+    await this.audit.record({
+      actorId: actor.userId,
+      action: 'REDEMPTION_READY_PICKUP',
+      entityType: 'REDEMPTION',
+      entityId: order.id,
+      before: { status: order.status, marksCost: order.marksCost },
+      after: { status: updated.status, marksCost: updated.marksCost },
+      reason: input.reason ?? null,
+    });
+    return { redemption: updated, duplicate: false };
+  }
+
+  /** GFT-04: hands over a ready gift and debits the reserved Marks once. */
+  async confirmDelivery(id: string, input: DeliveryInput, actor: AuthContext) {
+    const order = await this.lockOrder(id);
+    this.assertPickupBranch(order, actor);
+    if (order.status === 'DELIVERED') return { redemption: order, duplicate: true };
+    if (order.status !== 'READY_PICKUP') {
+      throw conflict('Chỉ đơn sẵn sàng nhận mới có thể xác nhận giao quà.', 'REDEMPTION_NOT_READY');
+    }
+    return this.close(
+      order,
+      'DELIVERED',
+      actor.userId,
+      input.reason ?? null,
+      input.deliveryEvidenceUrl ?? null,
+    );
+  }
+
+  /** GFT-05: rejects an open redemption and releases both its Marks hold and stock reservation. */
+  async rejectPickup(id: string, input: RejectPickupInput, actor: AuthContext) {
+    const order = await this.lockOrder(id);
+    this.assertPickupBranch(order, actor);
+    if (order.status === 'REJECTED') return { redemption: order, duplicate: true };
+    if (!['PENDING_PICKUP', 'READY_PICKUP'].includes(order.status)) {
+      throw conflict('Chỉ đơn đang chờ xử lý mới có thể từ chối.', 'REDEMPTION_NOT_OPEN');
+    }
+    return this.close(order, 'REJECTED', actor.userId, input.reason, null);
   }
 
   /** Internal system hook; caller must check the expiry deadline before invoking it. */
@@ -67,7 +118,7 @@ export class RedemptionService {
     reason: string | null,
     evidence: string | null,
   ) {
-    if (order.status !== 'PENDING_PICKUP')
+    if (!['PENDING_PICKUP', 'READY_PICKUP'].includes(order.status))
       throw conflict('Đơn đã kết thúc, không thể đổi trạng thái.', 'REDEMPTION_ALREADY_FINAL');
     if (status === 'DELIVERED') {
       await this.points.award({
@@ -94,8 +145,27 @@ export class RedemptionService {
     return { redemption: updated, duplicate: false };
   }
 
+  private assertPickupBranch(order: RedemptionState, actor: AuthContext) {
+    const isAdmin = actor.roles.includes(Role.ADMIN) || actor.roles.includes(Role.SUPER_ADMIN);
+    if (!isAdmin && actor.branchId !== order.pickupBranchId) {
+      throw forbidden('Lễ tân chỉ xử lý đơn tại chi nhánh nhận.', 'PICKUP_BRANCH_MISMATCH');
+    }
+  }
+
   history(memberId: string, filter: RedemptionHistoryFilter, limit: number, offset: number) {
     return this.repo.history(memberId, filter, limit, offset);
+  }
+
+  async staffList(filter: StaffRedemptionFilter, limit: number, offset: number, actor: AuthContext) {
+    const isAdmin = actor.roles.includes(Role.ADMIN) || actor.roles.includes(Role.SUPER_ADMIN);
+    if (!isAdmin && !actor.branchId) {
+      throw forbidden('Lễ tân chưa được gán chi nhánh.', 'STAFF_BRANCH_REQUIRED');
+    }
+    return this.repo.staffList(
+      { ...filter, branchId: isAdmin ? filter.branchId : actor.branchId! },
+      limit,
+      offset,
+    );
   }
 
   async detail(memberId: string, redemptionId: string) {

@@ -114,7 +114,7 @@ export class PointsRepository {
       COALESCE(h.held_marks,0)::int AS marks_held,(m.marks_balance-COALESCE(h.held_marks,0))::int AS marks_available,
       (m.status <> 'INACTIVE') AS can_redeem
       FROM members m LEFT JOIN LATERAL (SELECT SUM(r.marks_cost) AS held_marks FROM redemptions r
-        WHERE r.member_id=m.user_id AND r.status='PENDING_PICKUP') h ON true WHERE m.user_id=$1`,
+        WHERE r.member_id=m.user_id AND r.status IN ('PENDING_PICKUP','READY_PICKUP')) h ON true WHERE m.user_id=$1`,
       [memberId],
     );
   }
@@ -123,7 +123,7 @@ export class PointsRepository {
     return (
       (await sql.scalar<number>(
         `SELECT COALESCE(SUM(marks_cost),0) FROM redemptions
-      WHERE member_id=$1 AND status='PENDING_PICKUP' AND ($2::uuid IS NULL OR id<>$2)`,
+      WHERE member_id=$1 AND status IN ('PENDING_PICKUP','READY_PICKUP') AND ($2::uuid IS NULL OR id<>$2)`,
         [memberId, excludingRedemptionId ?? null],
       )) ?? 0
     );
