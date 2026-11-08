@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/branch/branch_providers.dart';
 import '../../../../core/design/hvp_context.dart';
+import '../../../../core/design/hvp_icons.dart';
 import '../../../../core/widgets/hvp_card.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../domain/class_models.dart';
@@ -12,10 +13,11 @@ import '../class_providers.dart';
 
 /// One class in the list: name, schedule, branch, coach and enrolment.
 class ClassTile extends ConsumerWidget {
-  const ClassTile({super.key, required this.item, this.onTap});
+  const ClassTile({super.key, required this.item, this.onTap, this.onEdit});
 
   final ClassSummary item;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,6 +39,11 @@ class ClassTile extends ConsumerWidget {
         children: <Widget>[
           Row(children: <Widget>[
             Expanded(child: Text(item.name, style: t.titleM)),
+            if (onEdit != null)
+              IconButton(
+                  tooltip: 'Sửa lớp',
+                  icon: const Icon(HvpIcons.pencil),
+                  onPressed: onEdit),
             if (!item.isActive)
               const StatusChip(label: 'Ngừng', tone: ChipTone.danger),
           ]),

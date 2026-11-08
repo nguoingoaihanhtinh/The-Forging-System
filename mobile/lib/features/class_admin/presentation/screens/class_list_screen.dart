@@ -9,6 +9,7 @@ import '../../../../core/widgets/hvp_refresh.dart';
 import '../../domain/class_models.dart';
 import '../../domain/session_types.dart';
 import '../class_providers.dart';
+import '../widgets/class_form_sheet.dart';
 import '../widgets/class_tile.dart';
 
 /// CLS-06: admin class list (tab "Đào tạo") with session type filter pills.
@@ -33,7 +34,13 @@ class _ClassListScreenState extends ConsumerState<ClassListScreen> {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text('LỚP HỌC', style: context.txt.titleL),
+            child: Row(children: <Widget>[
+              Expanded(child: Text('LỚP HỌC', style: context.txt.titleL)),
+              IconButton(
+                  tooltip: 'Tạo lớp',
+                  icon: const Icon(HvpIcons.plus),
+                  onPressed: () => showClassForm(context)),
+            ]),
           ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -64,7 +71,10 @@ class _ClassListScreenState extends ConsumerState<ClassListScreen> {
                     for (final item in page.items)
                       Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: ClassTile(item: item)),
+                          child: ClassTile(
+                              item: item,
+                              onEdit: () =>
+                                  showClassForm(context, existing: item))),
                     if (page.totalPages > 1)
                       Wrap(
                           alignment: WrapAlignment.spaceBetween,

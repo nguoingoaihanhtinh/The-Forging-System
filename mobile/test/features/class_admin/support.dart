@@ -11,6 +11,8 @@ import 'package:hvp_forging/features/class_admin/data/class_repository_impl.dart
 import 'package:hvp_forging/features/class_admin/domain/class_models.dart';
 import 'package:hvp_forging/features/class_admin/domain/class_repository.dart';
 import 'package:hvp_forging/features/class_admin/presentation/class_providers.dart';
+import 'package:hvp_forging/features/courses/domain/course.dart';
+import 'package:hvp_forging/features/courses/presentation/course_providers.dart';
 
 import '../../helpers/scripted_adapter.dart';
 
@@ -60,6 +62,7 @@ const sampleClass = ClassSummary(
 List<Override> classOverrides(ClassRepository repo) => <Override>[
       currentUserIdProvider.overrideWithValue('admin'),
       classRepositoryProvider.overrideWithValue(repo),
+      coursesProvider.overrideWith((ref) async => const <Course>[]),
       branchesProvider.overrideWith((ref) async =>
           const <Branch>[Branch(id: 'b1', code: 'Q7', name: 'HVP Quận 7')]),
     ];
@@ -78,6 +81,23 @@ class FakeClassRepository implements ClassRepository {
             page: query.page,
             total: 1,
             totalPages: 1);
+  }
+
+  final created = <ClassDraft>[];
+  final updated = <Map<String, Object?>>[];
+  Object? createError;
+
+  @override
+  Future<ClassSummary> create(ClassDraft draft) async {
+    if (createError != null) throw createError!;
+    created.add(draft);
+    return sampleClass;
+  }
+
+  @override
+  Future<ClassSummary> update(String id, Map<String, Object?> changes) async {
+    updated.add(changes);
+    return sampleClass;
   }
 
   @override

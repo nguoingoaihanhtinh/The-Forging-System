@@ -75,3 +75,71 @@ class ClassCoach {
   final String id;
   final String name;
 }
+
+/// Fields of the create/edit form (CLS-07).
+class ClassDraft {
+  const ClassDraft({
+    required this.branchId,
+    required this.name,
+    required this.sessionTypeCode,
+    required this.weekdays,
+    required this.startTime,
+    required this.durationMinutes,
+    required this.isActive,
+    this.courseId,
+    this.defaultCoachId,
+    this.capacity,
+  });
+
+  factory ClassDraft.of(ClassSummary c) => ClassDraft(
+        branchId: c.branchId,
+        name: c.name,
+        sessionTypeCode: c.sessionTypeCode,
+        courseId: c.courseId,
+        defaultCoachId: c.defaultCoachId,
+        weekdays: List<int>.of(c.weekdays)..sort(),
+        startTime: c.startTime,
+        durationMinutes: c.durationMinutes,
+        capacity: c.capacity,
+        isActive: c.isActive,
+      );
+
+  final String branchId;
+  final String name;
+  final String sessionTypeCode;
+  final String? courseId;
+  final String? defaultCoachId;
+  final List<int> weekdays;
+  final String startTime;
+  final int durationMinutes;
+  final int? capacity;
+  final bool isActive;
+
+  /// Request body of `POST /admin/classes`.
+  Map<String, Object?> toJson() => <String, Object?>{
+        'branchId': branchId,
+        'name': name.trim(),
+        'sessionTypeCode': sessionTypeCode,
+        'courseId': courseId,
+        'defaultCoachId': defaultCoachId,
+        'weekdays': weekdays,
+        'startTime': startTime,
+        'durationMinutes': durationMinutes,
+        'capacity': capacity,
+        'isActive': isActive,
+      };
+
+  /// Only the fields that differ from [before], for `PATCH /admin/classes/:id`
+  /// (the API re-validates just what changed). Empty when nothing changed.
+  Map<String, Object?> changesFrom(ClassDraft before) {
+    final now = toJson();
+    final old = before.toJson();
+    return <String, Object?>{
+      for (final key in now.keys)
+        if (key == 'weekdays'
+            ? now[key].toString() != old[key].toString()
+            : now[key] != old[key])
+          key: now[key],
+    };
+  }
+}

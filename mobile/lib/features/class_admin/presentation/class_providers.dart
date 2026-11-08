@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/network_providers.dart';
+import '../../../core/state/submit_notifier.dart';
 import '../../auth/presentation/providers/auth_controller.dart';
 import '../data/class_repository_impl.dart';
 import '../domain/class_models.dart';
@@ -20,3 +21,6 @@ final classCoachesProvider =
   ref.watch(currentUserIdProvider);
   return ref.watch(classRepositoryProvider).coaches();
 });
+
+final classSubmitProvider =
+    NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
