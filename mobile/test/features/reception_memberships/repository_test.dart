@@ -70,4 +70,35 @@ void main() {
     expect(desk.calls('POST /memberships/ms1/cancel').single.data,
         <String, dynamic>{'reason': 'Học viên xin huỷ'});
   });
+
+  test(
+      'MEM-16 packageTypes maps nulls and activateMembership posts package and photo',
+      () async {
+    boot(<String, Reply>{
+      'GET /package-types': (_) => okEnvelope(<dynamic>[
+            <String, dynamic>{
+              'id': 'p1',
+              'name': 'Group',
+              'isTrial': false,
+              'priceVnd': null,
+              'durationDays': null,
+              'totalSessions': null
+            },
+          ]),
+      'POST /members/m1/memberships': (_) =>
+          okEnvelope(<String, dynamic>{'message': 'Xong'}, status: 201),
+    });
+    final p = (await repo.packageTypes()).single;
+    expect([p.priceVnd, p.durationDays, p.totalSessions], [null, null, null]);
+    expect(
+        await repo.activateMembership('m1',
+            packageTypeId: 'p1', evidenceUrl: 'http://x/files/a.jpg'),
+        'Xong');
+    expect(
+        desk.calls('POST /members/m1/memberships').single.data,
+        <String, dynamic>{
+          'packageTypeId': 'p1',
+          'paymentEvidenceUrl': 'http://x/files/a.jpg'
+        });
+  });
 }

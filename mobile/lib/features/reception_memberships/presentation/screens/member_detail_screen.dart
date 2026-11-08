@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/design/hvp_context.dart';
 import '../../../../core/widgets/async_body.dart';
 import '../../../../core/widgets/hvp_app_bar.dart';
+import '../../../../core/widgets/hvp_button.dart';
 import '../../../../core/widgets/hvp_card.dart';
 import '../../../../core/widgets/hvp_refresh.dart';
 import '../../../auth/domain/auth_user.dart';
@@ -56,6 +57,14 @@ class MemberDetailScreen extends ConsumerWidget {
                   HvpCard(
                       child: Text('Học viên chưa có gói tập.',
                           style: context.txt.body)),
+                const SizedBox(height: 12),
+                HvpButton.gold(
+                  label: 'Kích hoạt / gia hạn gói',
+                  expand: true,
+                  onPressed: () => askActivatePackage(context, ref,
+                      memberId: memberId,
+                      memberName: overview.profile.fullName),
+                ),
                 if (membership.pendingRenewal != null) ...<Widget>[
                   const SizedBox(height: 12),
                   HvpCard(

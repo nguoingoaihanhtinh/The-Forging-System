@@ -34,4 +34,13 @@ class ReceptionMembershipsApi {
 
   Future<ApiEnvelope> memberMembership(String memberId) =>
       _api.get('/members/$memberId/membership');
+
+  Future<ApiEnvelope> packageTypes() => _api.get('/package-types');
+
+  Future<ApiEnvelope> activateMembership(
+          String memberId, String packageTypeId, String evidenceUrl) =>
+      _api.post('/members/$memberId/memberships', body: <String, dynamic>{
+        'packageTypeId': packageTypeId,
+        'paymentEvidenceUrl': evidenceUrl
+      });
 }

@@ -7,6 +7,7 @@ import '../data/reception_memberships_api.dart';
 import '../data/reception_memberships_repository_impl.dart';
 import '../../auth/presentation/providers/auth_controller.dart';
 import '../domain/member_models.dart';
+import '../domain/package_type.dart';
 import '../domain/reception_memberships_repository.dart';
 
 /// Tests override this with a fake repository.
@@ -35,4 +36,11 @@ final memberOverviewProvider =
   return ref
       .watch(receptionMembershipsRepositoryProvider)
       .memberOverview(memberId);
+});
+
+/// Packages on sale, for the manual activation picker.
+final packageTypesProvider =
+    FutureProvider.autoDispose<List<PackageType>>((ref) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(receptionMembershipsRepositoryProvider).packageTypes();
 });

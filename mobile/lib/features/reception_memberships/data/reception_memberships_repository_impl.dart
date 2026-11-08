@@ -4,7 +4,9 @@ import '../domain/reception_memberships_repository.dart';
 import '../domain/renewal_models.dart';
 import '../../membership/data/dto/membership_dto.dart';
 import '../domain/member_models.dart';
+import '../domain/package_type.dart';
 import 'dto/member_dto.dart';
+import 'dto/package_type_dto.dart';
 import 'dto/renewal_dto.dart';
 import 'reception_memberships_api.dart';
 
@@ -49,4 +51,18 @@ class ReceptionMembershipsRepositoryImpl
       membership: myMembershipFromJson((results[1] as ApiEnvelope).dataMap),
     );
   }
+
+  @override
+  Future<List<PackageType>> packageTypes() async => (await _api.packageTypes())
+      .dataList
+      .map((e) => packageTypeFromJson(asMap(e)))
+      .toList(growable: false);
+
+  @override
+  Future<String> activateMembership(String memberId,
+          {required String packageTypeId, required String evidenceUrl}) async =>
+      str(
+          (await _api.activateMembership(memberId, packageTypeId, evidenceUrl))
+              .dataMap,
+          'message');
 }

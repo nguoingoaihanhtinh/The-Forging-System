@@ -1,4 +1,5 @@
 import 'member_models.dart';
+import 'package_type.dart';
 import 'renewal_models.dart';
 
 /// Everything the front desk (and admin) does on packages and learners.
@@ -18,4 +19,11 @@ abstract interface class ReceptionMembershipsRepository {
 
   /// `GET /members/:memberId` and `GET /members/:memberId/membership`, together.
   Future<MemberOverview> memberOverview(String memberId);
+
+  /// `GET /package-types`: the packages on sale.
+  Future<List<PackageType>> packageTypes();
+
+  /// `POST /members/:memberId/memberships`. Returns the message to show.
+  Future<String> activateMembership(String memberId,
+      {required String packageTypeId, required String evidenceUrl});
 }
