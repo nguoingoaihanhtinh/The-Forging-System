@@ -1,6 +1,8 @@
 import '../../../core/branch/branch.dart';
 import '../../../core/utils/json_utils.dart';
 import '../domain/branch_admin_repository.dart';
+import '../domain/branch_input.dart';
+import '../domain/branch_qr.dart';
 import 'branch_admin_api.dart';
 
 class BranchAdminRepositoryImpl implements BranchAdminRepository {
@@ -15,4 +17,48 @@ class BranchAdminRepositoryImpl implements BranchAdminRepository {
         .map((e) => Branch.fromJson(asMap(e)))
         .toList(growable: false);
   }
+
+  @override
+  Future<Branch> create(BranchInput input) async =>
+      Branch.fromJson((await _api.create(_body(input))).dataMap);
+
+  @override
+  Future<Branch> update(String branchId, BranchInput input) async =>
+      Branch.fromJson((await _api.update(branchId, _body(input))).dataMap);
+
+  @override
+  Future<Branch> setActive(String branchId,
+          {required bool isActive, required String reason}) async =>
+      Branch.fromJson((await _api.setStatus(branchId,
+              <String, dynamic>{'isActive': isActive, 'reason': reason}))
+          .dataMap);
+
+  @override
+  Future<BranchQr> getQr(String branchId) async =>
+      _qr((await _api.qr(branchId)).dataMap);
+
+  @override
+  Future<BranchQr> rotateQr(String branchId, {String? reason}) async =>
+      _qr((await _api.rotateQr(branchId,
+              <String, dynamic>{if (reason != null) 'reason': reason}))
+          .dataMap);
+
+  BranchQr _qr(JsonMap j) => BranchQr(
+        branchId: str(j, 'branchId'),
+        code: str(j, 'code'),
+        qrVersion: str(j, 'qrVersion', '1'),
+        payload: str(j, 'payload'),
+      );
+
+  Map<String, dynamic> _body(BranchInput i) => <String, dynamic>{
+        'code': i.code.trim(),
+        'name': i.name.trim(),
+        'address': _orNull(i.address),
+        'openingHours': _orNull(i.openingHours),
+        'latitude': i.latitude,
+        'longitude': i.longitude,
+        'geofenceRadiusM': i.geofenceRadiusM,
+      };
+
+  String? _orNull(String? s) => s == null || s.trim().isEmpty ? null : s.trim();
 }

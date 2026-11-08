@@ -30,10 +30,14 @@ String roleLabel(AppRole role) {
 /// Minimal account area: identity card, theme switch and logout.
 /// Used by the student Hồ sơ tab and by the account sheet of the other roles.
 class AccountPanel extends ConsumerWidget {
-  const AccountPanel({super.key, this.inSheet = false});
+  const AccountPanel(
+      {super.key, this.inSheet = false, this.middle = const <Widget>[]});
 
   /// Adds the side padding that a sheet needs (a tab page gets it from its list).
   final bool inSheet;
+
+  /// Extra content between the identity card and the theme switch (student Hồ sơ tab).
+  final List<Widget> middle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,7 +45,8 @@ class AccountPanel extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final contact = user == null ? null : (user.phone ?? user.email);
     return Padding(
-      padding: EdgeInsets.fromLTRB(inSheet ? 20 : 0, 8, inSheet ? 20 : 0, inSheet ? 20 : 0),
+      padding: EdgeInsets.fromLTRB(
+          inSheet ? 20 : 0, 8, inSheet ? 20 : 0, inSheet ? 20 : 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -58,20 +63,29 @@ class AccountPanel extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(user.fullName, style: t.titleM, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text(user.fullName,
+                            style: t.titleM,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
                         if (contact != null) ...<Widget>[
                           const SizedBox(height: 2),
                           Text(contact, style: t.mono.copyWith(fontSize: 12)),
                         ],
                         const SizedBox(height: 8),
-                        StatusChip(label: roleLabel(user.appRole), tone: ChipTone.gold, icon: HvpIcons.shieldCheck),
+                        StatusChip(
+                            label: roleLabel(user.appRole),
+                            tone: ChipTone.gold,
+                            icon: HvpIcons.shieldCheck),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-          const SectionHeader(title: 'Giao diện', padding: EdgeInsets.only(top: 20, bottom: 10)),
+          ...middle,
+          const SectionHeader(
+              title: 'Giao diện',
+              padding: EdgeInsets.only(top: 20, bottom: 10)),
           const ThemeModeSelector(),
           const SizedBox(height: 24),
           HvpButton.danger(

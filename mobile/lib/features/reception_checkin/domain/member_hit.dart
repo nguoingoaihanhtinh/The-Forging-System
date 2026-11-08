@@ -9,6 +9,7 @@ class MemberHit {
     this.avatarUrl,
     this.rankName,
     this.packageName,
+    this.packageEndDate,
   });
 
   final String id;
@@ -23,6 +24,9 @@ class MemberHit {
 
   /// The package running now, if any.
   final String? packageName;
+
+  /// When that package ends, a calendar date `YYYY-MM-DD`; null for no expiry.
+  final String? packageEndDate;
 }
 
 class MemberSearchResult {
