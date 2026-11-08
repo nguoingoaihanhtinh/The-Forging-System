@@ -66,6 +66,7 @@ services:
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL in .env.prod (https://your-domain)}
       ENABLE_SCHEDULER: "true"
       PUSH_PROVIDER: ${PUSH_PROVIDER:-console}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON:-}
       OTP_PROVIDER: ${OTP_PROVIDER:-console}
       ESMS_API_KEY: ${ESMS_API_KEY:-}
       ESMS_SECRET_KEY: ${ESMS_SECRET_KEY:-}

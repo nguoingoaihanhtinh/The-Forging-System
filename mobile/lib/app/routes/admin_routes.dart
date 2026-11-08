@@ -3,6 +3,12 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/hvp_icons.dart';
 import '../../core/widgets/coming_soon_page.dart';
 import '../../features/auth/domain/auth_user.dart';
+import '../../features/branch_admin/presentation/screens/admin_settings_page.dart';
+import '../../features/branch_admin/presentation/screens/branch_list_screen.dart';
+import '../../features/armory_admin/presentation/screens/admin_armory_management_screen.dart';
+import '../../features/armory_admin/presentation/screens/admin_armory_reward_form_screen.dart';
+import '../../features/armory_admin/presentation/screens/admin_armory_tiers_screen.dart';
+import '../../features/staff/presentation/screens/staff_directory_screen.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
 
@@ -28,11 +34,7 @@ List<RouteBase> adminRoutes() => <RouteBase>[
             label: 'Thành viên',
             icon: HvpIcons.users,
             activeIcon: HvpIcons.usersFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Thành viên',
-              owner: 'feature: admin_members',
-              icon: HvpIcons.users,
-            ),
+            builder: (_) => const StaffDirectoryScreen(),
           ),
           ShellTab(
             path: AdminPaths.training,
@@ -73,13 +75,25 @@ List<RouteBase> adminRoutes() => <RouteBase>[
             label: 'Cấu hình',
             icon: HvpIcons.gear,
             activeIcon: HvpIcons.gearFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Cấu hình',
-              owner: 'feature: admin_settings',
-              icon: HvpIcons.gear,
-              description: 'Quy tắc, hạng, chi nhánh và nhật ký hệ thống.',
-            ),
+            builder: (_) => const AdminSettingsPage(),
           ),
         ],
+      ),
+      // ---- pushed screens (full screen, outside the shell) ----
+      GoRoute(
+        path: AdminPaths.branches,
+        builder: (context, state) => const BranchListScreen(),
+      ),
+      GoRoute(
+        path: AdminPaths.armory,
+        builder: (context, state) => const AdminArmoryManagementScreen(),
+      ),
+      GoRoute(
+        path: AdminPaths.armoryTierCreate,
+        builder: (context, state) => const AdminArmoryTiersScreen(),
+      ),
+      GoRoute(
+        path: AdminPaths.armoryRewardCreate,
+        builder: (context, state) => const AdminArmoryRewardFormScreen(),
       ),
     ];

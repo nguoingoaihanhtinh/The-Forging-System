@@ -12,11 +12,15 @@ class AuthRepositoryImpl implements AuthRepository {
   final TokenStore _tokens;
 
   @override
-  Future<AuthUser> login({required String identifier, required String password}) async {
+  Future<AuthUser> login(
+      {required String identifier, required String password}) async {
     final res = await _api.post(
       '/auth/login',
       auth: false,
-      body: <String, dynamic>{'identifier': identifier.trim(), 'password': password},
+      body: <String, dynamic>{
+        'identifier': identifier.trim(),
+        'password': password
+      },
     );
     return _storeSession(res.dataMap);
   }
@@ -44,9 +48,12 @@ class AuthRepositoryImpl implements AuthRepository {
     final access = str(data, 'accessToken');
     final refresh = str(data, 'refreshToken');
     if (access.isEmpty || refresh.isEmpty) {
-      throw const ApiException(code: ApiErrorCodes.unknown, message: 'Phản hồi đăng nhập không hợp lệ.');
+      throw const ApiException(
+          code: ApiErrorCodes.unknown,
+          message: 'Phản hồi đăng nhập không hợp lệ.');
     }
-    await _tokens.save(StoredTokens(accessToken: access, refreshToken: refresh));
+    await _tokens
+        .save(StoredTokens(accessToken: access, refreshToken: refresh));
     return AuthUser.fromJson(asMap(data['user']));
   }
 
@@ -71,7 +78,8 @@ class AuthRepositoryImpl implements AuthRepository {
     final stored = await _tokens.read();
     try {
       if (stored != null) {
-        await _api.post('/auth/logout', body: <String, dynamic>{'refreshToken': stored.refreshToken});
+        await _api.post('/auth/logout',
+            body: <String, dynamic>{'refreshToken': stored.refreshToken});
       }
     } catch (_) {
       // Best effort: the local session is cleared regardless.
@@ -80,13 +88,30 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<OtpTicket> requestRegisterOtp(String phone) => _requestOtp('/auth/register/otp', phone);
+  Future<void> changePassword(
+          {required String currentPassword,
+          required String password,
+          required String passwordConfirm}) =>
+      _api.post(
+        '/auth/password/change',
+        body: <String, dynamic>{
+          'currentPassword': currentPassword,
+          'password': password,
+          'passwordConfirm': passwordConfirm
+        },
+      );
 
   @override
-  Future<OtpTicket> requestPasswordReset(String phone) => _requestOtp('/auth/password/forgot', phone);
+  Future<OtpTicket> requestRegisterOtp(String phone) =>
+      _requestOtp('/auth/register/otp', phone);
+
+  @override
+  Future<OtpTicket> requestPasswordReset(String phone) =>
+      _requestOtp('/auth/password/forgot', phone);
 
   Future<OtpTicket> _requestOtp(String path, String phone) async {
-    final res = await _api.post(path, auth: false, body: <String, dynamic>{'phone': phone.trim()});
+    final res = await _api.post(path,
+        auth: false, body: <String, dynamic>{'phone': phone.trim()});
     final d = res.dataMap;
     return OtpTicket(
       requestId: str(d, 'requestId'),
@@ -96,7 +121,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<String> verifyResetPin({required String requestId, required String pin}) async {
+  Future<String> verifyResetPin(
+      {required String requestId, required String pin}) async {
     final res = await _api.post(
       '/auth/password/verify-pin',
       auth: false,

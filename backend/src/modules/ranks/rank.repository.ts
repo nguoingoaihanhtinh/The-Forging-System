@@ -32,6 +32,13 @@ export interface RankTrialRow {
   targetRankOrder?: number;
 }
 
+/** Standing of the member at the moment a rank was earned (null on older rows, the initial badge and demotions). */
+export interface RankChangeSnapshot {
+  dp: number;
+  fromRank: string;
+  monthsInFromRank: number;
+}
+
 export interface RankHistoryRow {
   id: string;
   memberId: string;
@@ -43,6 +50,7 @@ export interface RankHistoryRow {
   isRevoked: boolean;
   revokedAt: Date | null;
   earnedAt: Date;
+  snapshot: RankChangeSnapshot | null;
 }
 
 export class RankRepository {
@@ -115,12 +123,15 @@ export class RankRepository {
     isRevoked?: boolean;
     trialId?: string | null;
     approvedBy?: string | null;
+    snapshot?: RankChangeSnapshot | null;
+    /** Defaults to now; the data sync back-dates rows. */
+    earnedAt?: Date;
   }): Promise<number> {
     return sql.exec(
       `INSERT INTO member_rank_history
          (tenant_id, member_id, from_rank_id, to_rank_id, earned_via, reason, rank_trial_request_id, dp_at_change,
-          approved_by, is_revoked, revoked_at, earned_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, CASE WHEN $10 THEN $11::timestamptz END, $11::timestamptz)`,
+          approved_by, is_revoked, revoked_at, earned_at, snapshot)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, CASE WHEN $10 THEN $11::timestamptz END, $11::timestamptz, $12::jsonb)`,
       [
         db.currentTenantId(),
         input.memberId,
@@ -132,7 +143,8 @@ export class RankRepository {
         input.dpAtChange,
         input.approvedBy ?? null,
         input.isRevoked ?? false,
-        clock.now(),
+        input.earnedAt ?? clock.now(),
+        input.snapshot ? JSON.stringify(input.snapshot) : null,
       ],
     );
   }

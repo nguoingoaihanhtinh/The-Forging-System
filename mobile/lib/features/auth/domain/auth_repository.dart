@@ -22,7 +22,8 @@ class RegisterInput {
 
 /// Result of an OTP request (`/auth/register/otp`, `/auth/password/forgot`).
 class OtpTicket {
-  const OtpTicket({required this.requestId, required this.maskedDestination, this.devPin});
+  const OtpTicket(
+      {required this.requestId, required this.maskedDestination, this.devPin});
 
   final String requestId;
   final String maskedDestination;
@@ -33,7 +34,8 @@ class OtpTicket {
 
 abstract class AuthRepository {
   /// [identifier] is an email or a phone number.
-  Future<AuthUser> login({required String identifier, required String password});
+  Future<AuthUser> login(
+      {required String identifier, required String password});
 
   Future<AuthUser> register(RegisterInput input);
 
@@ -46,10 +48,16 @@ abstract class AuthRepository {
   /// Revokes the refresh token (best effort) and clears local credentials.
   Future<void> logout();
 
+  Future<void> changePassword(
+      {required String currentPassword,
+      required String password,
+      required String passwordConfirm});
+
   Future<OtpTicket> requestPasswordReset(String phone);
 
   /// Returns the short-lived reset token.
-  Future<String> verifyResetPin({required String requestId, required String pin});
+  Future<String> verifyResetPin(
+      {required String requestId, required String pin});
 
   Future<void> resetPassword({
     required String requestId,

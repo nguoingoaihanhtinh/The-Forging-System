@@ -106,8 +106,22 @@ export class NotificationRepository {
     );
   }
 
+  /** How many notifications the member can see in total (read or not): the same rows `listForMember` pages through. */
+  async countForMember(userId: string): Promise<number> {
+    const n = await sql.scalar<number | string>(
+      `SELECT count(*) FROM notifications n
+         JOIN members m ON m.user_id = $1
+        WHERE n.user_id = $1
+           OR (n.user_id IS NULL AND n.event_type = 'BROADCAST'
+               AND (n.branch_id IS NULL OR n.branch_id = m.home_branch_id)
+               AND (n.rank_id IS NULL OR n.rank_id = m.current_rank_id))`,
+      [userId],
+    );
+    return Number(n ?? 0); // pg returns count(*) as a string
+  }
+
   async countUnreadForMember(userId: string): Promise<number> {
-    const n = await sql.scalar<number>(
+    const n = await sql.scalar<number | string>(
       `SELECT count(*) FROM notifications n
          JOIN members m ON m.user_id = $1
          LEFT JOIN notification_reads r ON r.notification_id = n.id AND r.user_id = $1
@@ -118,7 +132,7 @@ export class NotificationRepository {
                 AND (n.rank_id IS NULL OR n.rank_id = m.current_rank_id)))`,
       [userId],
     );
-    return n ?? 0;
+    return Number(n ?? 0);
   }
 
   async markAllReadForMember(userId: string): Promise<void> {

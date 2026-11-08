@@ -1,10 +1,25 @@
 import { Router } from 'express';
+import { ArmoryRepository } from './modules/armory/armory.repository';
+import { armoryRoutes } from './modules/armory/armory.routes';
+import { ArmoryService } from './modules/armory/armory.service';
+import { RedemptionRepository } from './modules/armory/redemption.repository';
+import { redemptionRoutes } from './modules/armory/redemption.routes';
+import { RedemptionService } from './modules/armory/redemption.service';
+import { AdminArmoryRepository } from './modules/armory/admin-armory.repository';
+import { adminArmoryRoutes } from './modules/armory/admin-armory.routes';
+import { AdminArmoryService } from './modules/armory/admin-armory.service';
+import { InventoryRepository } from './modules/armory/inventory.repository';
+import { inventoryRoutes } from './modules/armory/inventory.routes';
+import { InventoryService } from './modules/armory/inventory.service';
 import { AuditService } from './modules/audit/audit.service';
 import { auditRoutes } from './modules/audit/audit.routes';
 import { AuthController } from './modules/auth/auth.controller';
 import { AuthRepository } from './modules/auth/auth.repository';
 import { authRoutes } from './modules/auth/auth.routes';
 import { AuthService } from './modules/auth/auth.service';
+import { ChallengeRepository } from './modules/challenges/challenge.repository';
+import { challengeRoutes } from './modules/challenges/challenge.routes';
+import { ChallengeService } from './modules/challenges/challenge.service';
 import { createOtpSender } from './modules/auth/otp.sender';
 import type { OtpSender } from './modules/auth/otp.sender';
 import { MemberRepository } from './modules/members/member.repository';
@@ -25,10 +40,41 @@ import { rankRoutes } from './modules/ranks/rank.routes';
 import { RankService } from './modules/ranks/rank.service';
 import { settingsRoutes } from './modules/settings/settings.routes';
 import { SettingsService } from './modules/settings/settings.service';
+import { StaffRepository } from './modules/staff/staff.repository';
+import { staffRoutes } from './modules/staff/staff.routes';
+import { StaffService } from './modules/staff/staff.service';
 import { LocalDiskStorage } from './modules/uploads/storage.service';
 import type { StorageService } from './modules/uploads/storage.service';
 import { uploadRoutes } from './modules/uploads/upload.routes';
 import { DomainEvents, eventBus } from './common/events/event-bus';
+import type { AttendanceConfirmedEvent } from './shared/events';
+import { BranchRepository } from './modules/branches/branch.repository';
+import { branchRoutes } from './modules/branches/branch.routes';
+import { BranchService } from './modules/branches/branch.service';
+import { ClassRepository } from './modules/classes/class.repository';
+import { classRoutes } from './modules/classes/class.routes';
+import { ClassService } from './modules/classes/class.service';
+import { MembershipRepository } from './modules/memberships/membership.repository';
+import { membershipRoutes } from './modules/memberships/membership.routes';
+import { MembershipService } from './modules/memberships/membership.service';
+import { BatchRepository } from './modules/batch/batch.repository';
+import { batchRoutes } from './modules/batch/batch.routes';
+import { BatchService } from './modules/batch/batch.service';
+import { jobs, registerJob } from './jobs/registry';
+import { ScheduleRepository } from './modules/schedule/schedule.repository';
+import { scheduleRoutes } from './modules/schedule/schedule.routes';
+import { ScheduleService } from './modules/schedule/schedule.service';
+import { CourseRepository } from './modules/courses/course.repository';
+import { courseRoutes } from './modules/courses/course.routes';
+import { CourseService } from './modules/courses/course.service';
+import { CheckinRepository } from './modules/checkin/checkin.repository';
+import { checkinRoutes } from './modules/checkin/checkin.routes';
+import { CheckinCodeService } from './modules/checkin/checkin-code.service';
+import { CheckinSessionService } from './modules/checkin/checkin-session.service';
+import { CheckinService } from './modules/checkin/checkin.service';
+import { LeaderboardRepository } from './modules/leaderboard/leaderboard.repository';
+import { leaderboardRoutes } from './modules/leaderboard/leaderboard.routes';
+import { LeaderboardService } from './modules/leaderboard/leaderboard.service';
 // [imports:feature-modules] (one line per module, keep alphabetical)
 
 /** Everything the HTTP layer and the scheduled jobs need, wired once at startup. */
@@ -42,6 +88,22 @@ export interface Container {
     members: MemberService;
     auth: AuthService;
     directory: UserDirectory;
+    branches: BranchService;
+    classes: ClassService;
+    memberships: MembershipService;
+    batch: BatchService;
+    schedule: ScheduleService;
+    staff: StaffService;
+    armory: ArmoryService;
+    redemptions: RedemptionService;
+    challenges: ChallengeService;
+    courses: CourseService;
+    checkinCodes: CheckinCodeService;
+    checkinSessions: CheckinSessionService;
+    checkin: CheckinService;
+    leaderboard: LeaderboardService;
+    adminArmory: AdminArmoryService;
+    inventory: InventoryService;
     // [services:feature-modules] (declare as `name: Type;` and assign in the module block below)
   };
   storage: StorageService;
@@ -70,7 +132,11 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   const audit = new AuditService();
   const settings = new SettingsService();
   const storage = overrides.storage ?? new LocalDiskStorage();
-  const notifications = new NotificationService(new NotificationRepository(), overrides.push ?? createPushProvider(), audit);
+  const notifications = new NotificationService(
+    new NotificationRepository(),
+    overrides.push ?? createPushProvider(),
+    audit,
+  );
 
   // ---- 2. gamification core (ledger -> ranks) ----
   const points = new PointsService(new PointsRepository(), settings, audit);
@@ -84,13 +150,71 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   const members = new MemberService(new MemberRepository(), ranks, points, notifications, audit, settings);
   const auth = new AuthService(new AuthRepository(), members, overrides.otp ?? createOtpSender(), settings);
   const directory = new UserDirectory();
+  const staff = new StaffService(new StaffRepository(), audit, settings);
+  const armory = new ArmoryService(new ArmoryRepository());
+  const redemptions = new RedemptionService(new RedemptionRepository(), audit, points);
+  const challenges = new ChallengeService(new ChallengeRepository(), audit, points, settings);
+  eventBus.on<AttendanceConfirmedEvent>(DomainEvents.ATTENDANCE_CONFIRMED, async (event) => {
+    await challenges.recordConfirmedAttendance(event);
+  });
+  const adminArmory = new AdminArmoryService(new AdminArmoryRepository(), audit);
+  const inventory = new InventoryService(new InventoryRepository(), audit);
 
-  const services = { audit, settings, notifications, points, ranks, members, auth, directory } as Container['services'];
+  const services = {
+    audit,
+    settings,
+    notifications,
+    points,
+    ranks,
+    members,
+    auth,
+    directory,
+    staff,
+    armory,
+    redemptions,
+    challenges,
+    adminArmory,
+    inventory,
+  } as Container['services'];
 
   // ---- 4. feature modules ----
   // Each module registers itself here by adding ONE block: instantiate its repositories/services,
   // register event listeners, and push its router. Never reach into another module's repository;
   // depend on its exported port or listen to its domain events (src/shared/events.ts).
+  const branches = new BranchService(new BranchRepository(), audit);
+  services.branches = branches;
+  const classes = new ClassService(new ClassRepository(), audit, settings, notifications);
+  services.classes = classes;
+  const memberships = new MembershipService(
+    new MembershipRepository(),
+    settings,
+    notifications,
+    audit,
+    services.members,
+    points,
+  );
+  services.memberships = memberships;
+  registerJob({
+    key: 'sessions',
+    name: 'Sinh buổi tập từ lịch lớp',
+    cron: '10 0 * * *',
+    run: ({ now }) => classes.generateSessions(now),
+  });
+  const batch = new BatchService(new BatchRepository(), audit, jobs);
+  services.batch = batch;
+  const schedule = new ScheduleService(new ScheduleRepository());
+  services.schedule = schedule;
+  const courses = new CourseService(new CourseRepository(), audit);
+  services.courses = courses;
+  const checkinRepository = new CheckinRepository();
+  const checkinCodes = new CheckinCodeService(checkinRepository, settings);
+  services.checkinCodes = checkinCodes;
+  const checkinSessions = new CheckinSessionService(checkinRepository, settings);
+  services.checkinSessions = checkinSessions;
+  const checkin = new CheckinService(checkinRepository, checkinCodes, checkinSessions, audit);
+  services.checkin = checkin;
+  const leaderboard = new LeaderboardService(new LeaderboardRepository());
+  services.leaderboard = leaderboard;
   // [modules:feature-modules]
 
   // ---- routers ----
@@ -98,12 +222,26 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     // Auth routes live under /auth, everything else declares absolute paths.
     Router().use('/auth', authRoutes(new AuthController(auth))),
     memberRoutes(members),
+    staffRoutes(staff),
+    armoryRoutes(armory),
+    redemptionRoutes(redemptions),
+    challengeRoutes(challenges),
+    adminArmoryRoutes(adminArmory),
+    inventoryRoutes(inventory),
     rankRoutes(ranks, directory),
     pointsRoutes(points),
     notificationRoutes(notifications),
     settingsRoutes(settings),
     auditRoutes(),
     uploadRoutes(storage),
+    branchRoutes(branches),
+    classRoutes(classes),
+    membershipRoutes(memberships),
+    batchRoutes(batch),
+    scheduleRoutes(schedule),
+    courseRoutes(courses),
+    checkinRoutes(checkinCodes, checkinSessions, checkin),
+    leaderboardRoutes(leaderboard),
     // [routers:feature-modules]
   ];
 
