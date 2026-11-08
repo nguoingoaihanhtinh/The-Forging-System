@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../app/route_paths.dart';
 
 import '../../../../core/design/hvp_context.dart';
 import '../../../../core/design/hvp_icons.dart';
@@ -72,6 +75,8 @@ class _ClassListScreenState extends ConsumerState<ClassListScreen> {
                       Padding(
                           padding: const EdgeInsets.only(bottom: 10),
                           child: ClassTile(
+                              onTap: () =>
+                                  context.push(AdminPaths.classDetail(item.id)),
                               item: item,
                               onEdit: () =>
                                   showClassForm(context, existing: item))),

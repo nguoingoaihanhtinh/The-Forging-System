@@ -105,6 +105,7 @@ class _ClassFormSheetState extends ConsumerState<ClassFormSheet> {
     });
     if (!mounted || !ok) return;
     ref.invalidate(classPageProvider);
+    ref.invalidate(classDetailProvider);
     HvpToast.success(
         context, existing == null ? 'Đã tạo lớp.' : 'Đã cập nhật lớp.');
     Navigator.of(context).pop();

@@ -100,6 +100,31 @@ class FakeClassRepository implements ClassRepository {
     return sampleClass;
   }
 
+  final enrolled = <String>[];
+  final removed = <String>[];
+  Object? enrolError;
+  var roster = <RosterEntry>[
+    const RosterEntry(
+        enrollmentId: 'e1',
+        memberId: 'm1',
+        memberCode: 'HVP-000123',
+        fullName: 'Nguyễn Văn A'),
+  ];
+
+  @override
+  Future<ClassDetail> detail(String id) async =>
+      ClassDetail(summary: sampleClass, roster: roster);
+
+  @override
+  Future<void> enrol(String classId, String memberId) async {
+    if (enrolError != null) throw enrolError!;
+    enrolled.add(memberId);
+  }
+
+  @override
+  Future<void> removeMember(String classId, String memberId) async =>
+      removed.add(memberId);
+
   @override
   Future<List<ClassCoach>> coaches() async =>
       const <ClassCoach>[ClassCoach('k1', 'Mai Nguyễn')];

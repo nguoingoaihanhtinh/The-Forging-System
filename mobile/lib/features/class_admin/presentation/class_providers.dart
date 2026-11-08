@@ -24,3 +24,9 @@ final classCoachesProvider =
 
 final classSubmitProvider =
     NotifierProvider<SubmitNotifier, SubmitState>(SubmitNotifier.new);
+
+final classDetailProvider =
+    FutureProvider.autoDispose.family<ClassDetail, String>((ref, id) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(classRepositoryProvider).detail(id);
+});

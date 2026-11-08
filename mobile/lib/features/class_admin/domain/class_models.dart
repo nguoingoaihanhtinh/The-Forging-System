@@ -143,3 +143,23 @@ class ClassDraft {
     };
   }
 }
+
+class RosterEntry {
+  const RosterEntry(
+      {required this.enrollmentId,
+      required this.memberId,
+      required this.memberCode,
+      required this.fullName});
+
+  final String enrollmentId;
+  final String memberId;
+  final String memberCode;
+  final String fullName;
+}
+
+class ClassDetail {
+  const ClassDetail({required this.summary, required this.roster});
+
+  final ClassSummary summary;
+  final List<RosterEntry> roster;
+}

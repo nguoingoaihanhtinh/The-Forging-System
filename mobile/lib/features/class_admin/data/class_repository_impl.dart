@@ -38,6 +38,21 @@ class ClassRepositoryImpl implements ClassRepository {
           (await _api.patch('/admin/classes/$id', body: changes)).dataMap);
 
   @override
+  Future<ClassDetail> detail(String id) async =>
+      classDetailFromJson((await _api.get('/admin/classes/$id')).dataMap);
+
+  @override
+  Future<void> enrol(String classId, String memberId) async {
+    await _api.post('/admin/classes/$classId/enrollments',
+        body: <String, dynamic>{'memberId': memberId});
+  }
+
+  @override
+  Future<void> removeMember(String classId, String memberId) async {
+    await _api.delete('/admin/classes/$classId/enrollments/$memberId');
+  }
+
+  @override
   Future<List<ClassCoach>> coaches() async {
     final result = <ClassCoach>[];
     for (final role in const <String>['COACH', 'HEAD_COACH']) {

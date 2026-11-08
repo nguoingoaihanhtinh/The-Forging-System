@@ -18,3 +18,16 @@ ClassSummary classSummaryFromJson(JsonMap j) => ClassSummary(
       isActive: boolOf(j, 'isActive', true),
       enrolledCount: intOf(j, 'enrolledCount'),
     );
+
+ClassDetail classDetailFromJson(JsonMap j) => ClassDetail(
+      summary: classSummaryFromJson(j),
+      roster: asList(j['roster'])
+          .map((e) => asMap(e))
+          .map((r) => RosterEntry(
+                enrollmentId: str(r, 'enrollmentId'),
+                memberId: str(r, 'memberId'),
+                memberCode: str(r, 'memberCode'),
+                fullName: str(r, 'fullName'),
+              ))
+          .toList(growable: false),
+    );

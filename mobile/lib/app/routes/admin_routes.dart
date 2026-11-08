@@ -8,6 +8,7 @@ import '../../features/branch_admin/presentation/screens/branch_list_screen.dart
 import '../../features/armory_admin/presentation/screens/admin_armory_management_screen.dart';
 import '../../features/armory_admin/presentation/screens/admin_armory_reward_form_screen.dart';
 import '../../features/armory_admin/presentation/screens/admin_armory_tiers_screen.dart';
+import '../../features/class_admin/presentation/screens/class_detail_screen.dart';
 import '../../features/class_admin/presentation/screens/class_list_screen.dart';
 import '../../features/staff/presentation/screens/staff_directory_screen.dart';
 import '../route_paths.dart';
@@ -77,6 +78,11 @@ List<RouteBase> adminRoutes() => <RouteBase>[
         ],
       ),
       // ---- pushed screens (full screen, outside the shell) ----
+      GoRoute(
+        path: AdminPaths.classDetailPattern,
+        builder: (context, state) =>
+            ClassDetailScreen(classId: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: AdminPaths.branches,
         builder: (context, state) => const BranchListScreen(),
