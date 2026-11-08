@@ -168,6 +168,13 @@ export class ChallengeService {
       before: participation,
       after,
     });
+    const challenge = await this.repo.find(participation.challengeId);
+    await this.notifier?.notifyStaff(
+      'COACH',
+      NotificationEvent.CHALLENGE_EVIDENCE,
+      'BẰNG CHỨNG CHALLENGE MỚI',
+      `Có bằng chứng mới cho “${challenge?.title ?? 'Challenge'}”. Mở tab Challenge để duyệt và phát thưởng.`,
+    );
     return after;
   }
 
