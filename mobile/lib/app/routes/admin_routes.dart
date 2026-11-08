@@ -5,6 +5,9 @@ import '../../core/widgets/coming_soon_page.dart';
 import '../../features/auth/domain/auth_user.dart';
 import '../../features/branch_admin/presentation/screens/admin_settings_page.dart';
 import '../../features/branch_admin/presentation/screens/branch_list_screen.dart';
+import '../../features/armory_admin/presentation/screens/admin_armory_management_screen.dart';
+import '../../features/armory_admin/presentation/screens/admin_armory_reward_form_screen.dart';
+import '../../features/armory_admin/presentation/screens/admin_armory_tiers_screen.dart';
 import '../../features/staff/presentation/screens/staff_directory_screen.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
@@ -80,5 +83,17 @@ List<RouteBase> adminRoutes() => <RouteBase>[
       GoRoute(
         path: AdminPaths.branches,
         builder: (context, state) => const BranchListScreen(),
+      ),
+      GoRoute(
+        path: AdminPaths.armory,
+        builder: (context, state) => const AdminArmoryManagementScreen(),
+      ),
+      GoRoute(
+        path: AdminPaths.armoryTierCreate,
+        builder: (context, state) => const AdminArmoryTiersScreen(),
+      ),
+      GoRoute(
+        path: AdminPaths.armoryRewardCreate,
+        builder: (context, state) => const AdminArmoryRewardFormScreen(),
       ),
     ];
