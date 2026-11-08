@@ -102,9 +102,18 @@ export class RedemptionRepository {
   ) {
     return sql.one<RedemptionState>(
       `UPDATE redemptions SET status=$2,decided_by=$3,decided_at=now(),reason=$4,
-      delivery_evidence_url=$5,updated_at=now() WHERE id=$1 AND status='PENDING_PICKUP'
+      delivery_evidence_url=$5,updated_at=now() WHERE id=$1 AND status IN ('PENDING_PICKUP','READY_PICKUP')
       RETURNING ${orderColumns},member_id,reason,decided_by,decided_at,delivery_evidence_url`,
       [id, status, actorId, reason, evidence],
+    );
+  }
+
+  transitionToReadyPickup(id: string, actorId: string, reason: string | null) {
+    return sql.one<RedemptionState>(
+      `UPDATE redemptions SET status='READY_PICKUP',decided_by=$2,decided_at=now(),reason=$3,updated_at=now()
+      WHERE id=$1 AND status='PENDING_PICKUP'
+      RETURNING ${orderColumns},member_id,reason,decided_by,decided_at,delivery_evidence_url`,
+      [id, actorId, reason],
     );
   }
 
@@ -154,7 +163,7 @@ export class RedemptionRepository {
     return (
       (await sql.scalar<number>(
         `SELECT count(*)::int FROM redemptions WHERE member_id=$1 AND reward_id=$2
-      AND status IN ('PENDING_PICKUP','DELIVERED') AND ($3::timestamptz IS NULL OR requested_at >= $3)
+      AND status IN ('PENDING_PICKUP','READY_PICKUP','DELIVERED') AND ($3::timestamptz IS NULL OR requested_at >= $3)
       AND ($4::timestamptz IS NULL OR requested_at < $4)`,
         [memberId, rewardId, start, end],
       )) ?? 0

@@ -7,6 +7,7 @@ import { validate } from '../../common/middlewares/validate.middleware';
 import { Role, RoleGroup } from '../../shared/roles';
 import type { RedemptionService } from './redemption.service';
 import {
+  approvePickupBody,
   cancelBody,
   createRedemptionBody,
   decisionBody,
@@ -58,6 +59,13 @@ export function redemptionRoutes(service: RedemptionService): Router {
     handle(async (req) =>
       ok(await service.cancel(authOf(req).userId, req.params.redemptionId, req.body.reason)),
     ),
+  );
+  r.post(
+    '/staff/armory/redemptions/:redemptionId/approve',
+    requireAuth,
+    requireRoles(...RoleGroup.FRONT_DESK),
+    validate({ params: redemptionIdParam, body: approvePickupBody }),
+    handle(async (req) => ok(await service.approvePickup(req.params.redemptionId, req.body, authOf(req)))),
   );
   r.post(
     '/staff/armory/redemptions/:redemptionId/decision',

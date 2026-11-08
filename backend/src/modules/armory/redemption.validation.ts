@@ -18,7 +18,7 @@ export type CreateRedemptionInput = z.infer<typeof createRedemptionBody>;
 export const redemptionIdParam = z.object({ redemptionId: uuid });
 export const redemptionHistoryQuery = paginationQuery
   .extend({
-    status: z.enum(['PENDING_PICKUP', 'DELIVERED', 'REJECTED', 'CANCELLED', 'EXPIRED']).optional(),
+    status: z.enum(['PENDING_PICKUP', 'READY_PICKUP', 'DELIVERED', 'REJECTED', 'CANCELLED', 'EXPIRED']).optional(),
   })
   .strict();
 export type RedemptionHistoryFilter = Pick<z.infer<typeof redemptionHistoryQuery>, 'status'>;
@@ -39,3 +39,8 @@ export const decisionBody = z.discriminatedUnion('status', [
   z.object({ status: z.literal('REJECTED'), reason: z.string().trim().min(3).max(500) }).strict(),
 ]);
 export type RedemptionDecision = z.infer<typeof decisionBody>;
+
+export const approvePickupBody = z
+  .object({ reason: z.string().trim().min(3).max(500).optional() })
+  .strict();
+export type ApprovePickupInput = z.infer<typeof approvePickupBody>;
