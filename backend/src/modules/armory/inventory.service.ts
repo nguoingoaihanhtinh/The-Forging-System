@@ -7,6 +7,10 @@ export class InventoryService {
 
   history(filter: InventoryFilter, limit: number, offset: number) { return this.repo.history(filter, limit, offset); }
 
+  rewards(filter: { q?: string }, limit: number, offset: number) {
+    return this.repo.searchRewards(filter, limit, offset);
+  }
+
   async adjust(input: { rewardId: string; movementType: 'IN' | 'OUT'; quantity: number; reason: string }, actorId: string) {
     const reward = await this.repo.lockReward(input.rewardId);
     if (!reward) throw notFound('Reward');

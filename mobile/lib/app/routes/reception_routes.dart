@@ -9,6 +9,7 @@ import '../../features/reception_checkin/presentation/assisted_checkin_screen.da
 import '../../features/reception_checkin/presentation/member_today_screen.dart';
 import '../../features/reception_checkin/presentation/reception_checkin_tab.dart';
 import '../../features/reception_gifts/presentation/gift_handover_tab.dart';
+import '../../features/reception_stock/presentation/reception_stock_tab.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
 
@@ -42,11 +43,7 @@ List<RouteBase> receptionRoutes() => <RouteBase>[
             label: 'Kho quà',
             icon: HvpIcons.package,
             activeIcon: HvpIcons.packageFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Kho quà',
-              owner: 'feature: reception_stock',
-              icon: HvpIcons.package,
-            ),
+            builder: (_) => const ReceptionStockTab(),
           ),
           ShellTab(
             path: ReceptionPaths.handover,
