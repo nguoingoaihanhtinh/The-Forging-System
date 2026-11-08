@@ -17,6 +17,7 @@ import '../../features/courses/presentation/courses_screen.dart';
 import '../../features/courses/presentation/lesson_detail_screen.dart';
 import '../../features/fighter_record/presentation/screens/fighter_record_screen.dart';
 import '../../features/membership/presentation/screens/membership_screen.dart';
+import '../../features/membership/presentation/widgets/membership_banner.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/notifications/presentation/widgets/notification_bell.dart';
 import '../../features/schedule/presentation/screens/schedule_tab.dart';
@@ -40,30 +41,43 @@ List<RouteBase> studentRoutes() => <RouteBase>[
             label: 'Trang chủ',
             icon: HvpIcons.home,
             activeIcon: HvpIcons.homeFill,
-            builder: (context) => ComingSoonPage(
-              title: 'Trang chủ',
-              owner: 'feature: student_home',
-              icon: HvpIcons.home,
-              description: 'Tổng quan DP, chuỗi tập, buổi tập sắp tới.',
-              action: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: <Widget>[
-                  HvpButton.gold(
-                    label: 'Mở Fighter Record',
-                    icon: HvpIcons.trophyBold,
-                    small: true,
-                    onPressed: () => context.push(StudentPaths.fighterRecord),
+            builder: (context) => Column(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: MembershipBanner(
+                    onAction: () => context.push(StudentPaths.membership),
                   ),
-                  HvpButton.gold(
-                    label: 'Lộ trình khóa học',
-                    icon: HvpIcons.book,
-                    small: true,
-                    onPressed: () => context.push(StudentPaths.courses),
+                ),
+                Expanded(
+                  child: ComingSoonPage(
+                    title: 'Trang chủ',
+                    owner: 'feature: student_home',
+                    icon: HvpIcons.home,
+                    description: 'Tổng quan DP, chuỗi tập, buổi tập sắp tới.',
+                    action: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: <Widget>[
+                        HvpButton.gold(
+                          label: 'Mở Fighter Record',
+                          icon: HvpIcons.trophyBold,
+                          small: true,
+                          onPressed: () =>
+                              context.push(StudentPaths.fighterRecord),
+                        ),
+                        HvpButton.gold(
+                          label: 'Lộ trình khóa học',
+                          icon: HvpIcons.book,
+                          small: true,
+                          onPressed: () => context.push(StudentPaths.courses),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           ShellTab(

@@ -161,3 +161,50 @@ class PendingRenewalCard extends StatelessWidget {
     );
   }
 }
+
+/// One row of the renewal history.
+class RenewalRequestTile extends StatelessWidget {
+  const RenewalRequestTile({super.key, required this.request});
+
+  final RenewalRequest request;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.txt;
+    final sent = request.createdAt;
+    final reason = request.reason;
+    return HvpCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(child: Text(request.packageName, style: t.titleS)),
+              const SizedBox(width: 8),
+              StatusChip(
+                label: request.status.label,
+                tone: switch (request.status) {
+                  RenewalStatus.pending => ChipTone.warning,
+                  RenewalStatus.completed => ChipTone.success,
+                  RenewalStatus.cancelled => ChipTone.danger,
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            [
+              if (sent != null) 'Gửi ${formatDate(sent)}',
+              priceLabel(request.priceVnd),
+            ].join(' · '),
+            style: t.bodySmall,
+          ),
+          if (reason != null) ...<Widget>[
+            const SizedBox(height: 4),
+            Text('Lý do huỷ: $reason', style: t.body),
+          ],
+        ],
+      ),
+    );
+  }
+}
