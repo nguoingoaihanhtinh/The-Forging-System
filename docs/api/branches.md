@@ -112,7 +112,7 @@ Quyền: lễ tân + admin (FD). Học viên/coach → 403.
 { "data": { "branchId": "6f1c0a52-8d0e-4c0b-9a55-0b6f3a2f6c11", "code": "Q1", "qrVersion": "3", "payload": "HVP|Q1|3" } }
 ```
 
-`payload` = `HVP|<mã chi nhánh>|<qrVersion>`, chuỗi để in/hiển thị mã QR tĩnh (màn lễ tân, in bảng QR).
+`payload` = `HVP|<mã chi nhánh>|<qrVersion>`, chuỗi để in/hiển thị mã QR tĩnh (màn lễ tân, in bảng QR). Đây chỉ là mã để in, **không phải mã check-in hợp lệ**: mã học viên quét là mã xoay vòng từ `GET /branches/:branchId/checkin-code`, xem [`checkin.md`](checkin.md).
 
 | HTTP | code | message |
 |---|---|---|

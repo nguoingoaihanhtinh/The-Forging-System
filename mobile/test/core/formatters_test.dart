@@ -21,6 +21,11 @@ void main() {
     });
   });
 
+  test('formatTime shows the Vietnam wall-clock time of an instant', () {
+    expect(formatTime(DateTime.utc(2026, 11, 2, 11, 0)), '18:00');
+    expect(formatTime(DateTime.utc(2026, 11, 2, 17, 5)), '00:05'); // crosses midnight
+  });
+
   test('formatDecimal1 uses a decimal comma', () {
     expect(formatDecimal1(3.5), '3,5');
     expect(formatDecimal1(2), '2,0');

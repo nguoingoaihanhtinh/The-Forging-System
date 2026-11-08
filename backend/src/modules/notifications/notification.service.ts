@@ -78,11 +78,12 @@ export class NotificationService implements NotifierPort {
   // ---------- reads ----------
 
   async listForMember(userId: string, limit: number, offset: number) {
-    const [items, unread] = await Promise.all([
+    const [items, unread, total] = await Promise.all([
       this.repo.listForMember(userId, limit, offset),
       this.repo.countUnreadForMember(userId),
+      this.repo.countForMember(userId),
     ]);
-    return { items, unread };
+    return { items, unread, total };
   }
 
   unreadCountForMember(userId: string): Promise<number> {

@@ -12,26 +12,161 @@ class AdminSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.hvp;
-    final t = context.txt;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: <Widget>[
-        HvpCard(
-          onTap: () => context.push(AdminPaths.branches),
-          child: Row(
-            children: <Widget>[
-              Icon(HvpIcons.mapPin, color: c.gold),
-              const SizedBox(width: 12),
-              Expanded(child: Text('Chi nhánh', style: t.titleS)),
-              Icon(HvpIcons.caretRight, color: c.textMuted),
-            ],
+    return DefaultTabController(
+      length: _settingsTabs.length,
+      child: Column(
+        children: <Widget>[
+          Material(
+            color: context.hvp.surface,
+            child: TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              tabs: <Widget>[
+                for (final tab in _settingsTabs) Tab(text: tab.label)
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Text('Quy tắc, hạng và nhật ký hệ thống: sắp ra mắt.',
-            style: t.bodySmall),
-      ],
+          Expanded(
+            child: TabBarView(
+              children: <Widget>[
+                _OverviewTab(
+                    onBranches: () => context.push(AdminPaths.branches)),
+                for (final tab in _settingsTabs.skip(1)) _ConfigTab(tab: tab),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _SettingsTab {
+  const _SettingsTab(
+      {required this.label,
+      required this.title,
+      required this.description,
+      required this.icon});
+  final String label;
+  final String title;
+  final String description;
+  final IconData icon;
+}
+
+const List<_SettingsTab> _settingsTabs = <_SettingsTab>[
+  _SettingsTab(
+      label: 'Tổng quan',
+      title: 'Tổng quan',
+      description: 'Quản lý các danh mục và cấu hình chung của hệ thống.',
+      icon: HvpIcons.gear),
+  _SettingsTab(
+      label: 'Điểm & hạng',
+      title: 'Điểm và hạng',
+      description: 'DP, Marks, giới hạn điểm và quy tắc lên hạng.',
+      icon: HvpIcons.trophy),
+  _SettingsTab(
+      label: 'Chuỗi tập',
+      title: 'Chuỗi tập',
+      description: 'Mốc chuỗi tập, điều kiện duy trì và Streak Freeze.',
+      icon: HvpIcons.fire),
+  _SettingsTab(
+      label: 'Thử thách',
+      title: 'Thử thách',
+      description: 'Giới hạn phần thưởng và lịch nhắc thử thách.',
+      icon: HvpIcons.flag),
+  _SettingsTab(
+      label: 'Armory',
+      title: 'Armory',
+      description: 'Hạn nhận quà và ngưỡng cảnh báo tồn kho.',
+      icon: HvpIcons.armory),
+  _SettingsTab(
+      label: 'Khác',
+      title: 'Khác',
+      description: 'Gói tập, lớp học, check-in và bảo mật.',
+      icon: HvpIcons.gear),
+];
+
+class _OverviewTab extends StatelessWidget {
+  const _OverviewTab({required this.onBranches});
+  final VoidCallback onBranches;
+
+  @override
+  Widget build(BuildContext context) => ListView(
+        padding: const EdgeInsets.all(16),
+        children: <Widget>[
+          Text('CẤU HÌNH HỆ THỐNG', style: context.txt.titleL),
+          const SizedBox(height: 4),
+          Text(
+              'Chọn nhóm cấu hình ở các tab bên trên để thiết lập quy tắc vận hành.',
+              style: context.txt.bodySmall),
+          const SizedBox(height: 16),
+          HvpCard(
+            onTap: onBranches,
+            child: Row(children: <Widget>[
+              Icon(HvpIcons.mapPin, color: context.hvp.gold),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                    Text('Chi nhánh', style: context.txt.titleS),
+                    const SizedBox(height: 2),
+                    Text('Địa chỉ, lịch mở cửa và khu vực check-in.',
+                        style: context.txt.bodySmall),
+                  ])),
+              Icon(HvpIcons.caretRight, color: context.hvp.textMuted),
+            ]),
+          ),
+        ],
+      );
+}
+
+class _ConfigTab extends StatelessWidget {
+  const _ConfigTab({required this.tab});
+  final _SettingsTab tab;
+
+  @override
+  Widget build(BuildContext context) => ListView(
+        padding: const EdgeInsets.all(16),
+        children: <Widget>[
+          Icon(tab.icon, size: 36, color: context.hvp.gold),
+          const SizedBox(height: 12),
+          Text(tab.title.toUpperCase(), style: context.txt.titleL),
+          const SizedBox(height: 6),
+          Text(tab.description, style: context.txt.bodySmall),
+          const SizedBox(height: 18),
+          HvpCard(
+            child: Row(children: <Widget>[
+              Icon(HvpIcons.info, color: context.hvp.info),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: Text(
+                      'Các tham số của nhóm này sẽ được hiển thị và chỉnh sửa tại đây.',
+                      style: context.txt.bodySmall)),
+            ]),
+          ),
+          if (tab.label == 'Armory') ...<Widget>[
+            const SizedBox(height: 12),
+            HvpCard(
+              onTap: () => context.push(AdminPaths.armory),
+              child: Row(children: <Widget>[
+                Icon(HvpIcons.armory, color: context.hvp.gold),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('Quản lý Armory', style: context.txt.titleS),
+                      const SizedBox(height: 2),
+                      Text('Tier, quà tặng và trạng thái bán.',
+                          style: context.txt.bodySmall),
+                    ],
+                  ),
+                ),
+                Icon(HvpIcons.caretRight, color: context.hvp.textMuted),
+              ]),
+            ),
+          ],
+        ],
+      );
 }

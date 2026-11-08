@@ -7,6 +7,7 @@ abstract final class AppPaths {
   static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
+  static const String changePassword = '/change-password';
 
   /// Screens reachable without a session.
   static const List<String> public = <String>[login, register, forgotPassword];
@@ -32,15 +33,34 @@ abstract final class StudentPaths {
   static const String schedule = '/student/schedule';
   static const String checkin = '/student/checkin';
   static const String armory = '/student/armory';
+  static const String armoryRedemptions = '/student/armory/redemptions';
+  static const String armoryRedemptionPattern =
+      '/student/armory/redemptions/:redemptionId';
+  static String armoryRedemption(String id) =>
+      '/student/armory/redemptions/$id';
   static const String profile = '/student/profile';
 
   // Pushed screens
+  static const String checkinScan = '/student/checkin/scan';
+
+  /// The scanner, optionally told which session the learner picked (`?sessionId=`).
+  static String checkinScanFor(String? sessionId) => sessionId == null
+      ? checkinScan
+      : '$checkinScan?sessionId=${Uri.encodeQueryComponent(sessionId)}';
   static const String fighterRecord = '/student/fighter-record';
   static const String streak = '/student/streak';
   static const String challenges = '/student/challenges';
+  static const String currentChallenges = '/student/challenges/current';
   static const String notifications = '/student/notifications';
   static const String membership = '/student/membership';
   static const String workLog = '/student/work-log';
+  static const String courses = '/student/courses';
+  static const String coursePattern = '/student/courses/:courseId';
+  static String course(String id) => '/student/courses/$id';
+  static const String courseLessonPattern =
+      '/student/courses/:courseId/lessons/:lessonNo';
+  static String courseLesson(String courseId, int lessonNo) =>
+      '/student/courses/$courseId/lessons/$lessonNo';
   static const String lessonPattern = '/student/lessons/:id';
   static String lesson(String id) => '/student/lessons/$id';
 }
@@ -55,6 +75,18 @@ abstract final class CoachPaths {
 
 abstract final class ReceptionPaths {
   static const String checkin = '/reception/checkin';
+
+  // Pushed screens
+  static const String branchQr = '/reception/checkin/qr';
+  static const String memberTodayPattern =
+      '/reception/checkin/member/:memberId';
+  static String memberToday(String memberId) =>
+      '/reception/checkin/member/$memberId';
+  static const String assistedCheckinPattern =
+      '/reception/checkin/member/:memberId/session/:sessionId';
+  static String assistedCheckin(String memberId, String sessionId) =>
+      '/reception/checkin/member/$memberId/session/$sessionId';
+
   static const String memberships = '/reception/memberships';
   static const String stock = '/reception/stock';
   static const String handover = '/reception/handover';
@@ -70,4 +102,8 @@ abstract final class AdminPaths {
 
   // Pushed screens
   static const String branches = '/admin/settings/branches';
+  static const String armory = '/admin/settings/armory';
+  static const String armoryTierCreate = '/admin/settings/armory/tiers/create';
+  static const String armoryRewardCreate =
+      '/admin/settings/armory/rewards/create';
 }
