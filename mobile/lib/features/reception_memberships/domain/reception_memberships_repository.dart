@@ -1,6 +1,6 @@
 import '../../reception_checkin/domain/member_hit.dart';
 import 'member_models.dart';
-import 'package_type.dart';
+import '../../membership/domain/membership_models.dart';
 import 'renewal_models.dart';
 
 /// Everything the front desk (and admin) does on packages and learners.

@@ -9,7 +9,7 @@ import '../../../core/state/submit_notifier.dart';
 import '../../auth/presentation/providers/auth_controller.dart';
 import '../../reception_checkin/domain/member_hit.dart';
 import '../domain/member_models.dart';
-import '../domain/package_type.dart';
+import '../../membership/domain/membership_models.dart';
 import '../domain/reception_memberships_repository.dart';
 
 /// Tests override this with a fake repository.

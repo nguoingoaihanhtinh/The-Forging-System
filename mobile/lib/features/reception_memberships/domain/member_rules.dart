@@ -1,5 +1,5 @@
 import '../../../core/utils/formatters.dart';
-import 'package_type.dart';
+import '../../membership/domain/membership_models.dart';
 
 /// Reception cancels only a package waiting to start; cancelling a running one is an admin job.
 bool canCancelPackage({required bool isAdmin, required bool scheduled}) =>

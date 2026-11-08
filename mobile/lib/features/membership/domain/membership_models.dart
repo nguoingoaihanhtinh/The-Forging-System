@@ -104,7 +104,7 @@ class PackageType {
   const PackageType({
     required this.id,
     required this.name,
-    required this.isTrial,
+    this.isTrial = false,
     this.durationDays,
     this.totalSessions,
     this.priceVnd,

@@ -1,7 +1,6 @@
 import 'package:go_router/go_router.dart';
 
 import '../../core/design/hvp_icons.dart';
-import '../../core/widgets/coming_soon_page.dart';
 import '../../features/auth/domain/auth_user.dart';
 import '../../features/branch_qr/presentation/branch_qr_route.dart';
 import '../../features/reception_checkin/domain/member_hit.dart';

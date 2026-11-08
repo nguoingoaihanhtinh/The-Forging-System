@@ -5,9 +5,8 @@ import '../domain/renewal_models.dart';
 import '../../membership/data/dto/membership_dto.dart';
 import '../../reception_checkin/domain/member_hit.dart';
 import '../domain/member_models.dart';
-import '../domain/package_type.dart';
+import '../../membership/domain/membership_models.dart';
 import 'dto/member_dto.dart';
-import 'dto/package_type_dto.dart';
 import 'dto/renewal_dto.dart';
 import 'reception_memberships_api.dart';
 

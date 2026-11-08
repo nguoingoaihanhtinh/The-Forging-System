@@ -10,7 +10,7 @@ import '../../../../core/widgets/hvp_button.dart';
 import '../../../../core/widgets/hvp_card.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../domain/member_rules.dart';
-import '../../domain/package_type.dart';
+import '../../../membership/domain/membership_models.dart';
 import '../reception_memberships_providers.dart';
 
 /// Step 1 of the manual activation: choose a package. Resolves to it, or null when dismissed.
