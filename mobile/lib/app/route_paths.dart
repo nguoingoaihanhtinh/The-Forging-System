@@ -108,4 +108,7 @@ abstract final class AdminPaths {
   static const String armoryTierCreate = '/admin/settings/armory/tiers/create';
   static const String armoryRewardCreate =
       '/admin/settings/armory/rewards/create';
+  static const String challengeCreate = '/admin/challenges/create';
+  static const String challengeEditPattern = '/admin/challenges/:challengeId/edit';
+  static String challengeEdit(String challengeId) => '/admin/challenges/$challengeId/edit';
 }
