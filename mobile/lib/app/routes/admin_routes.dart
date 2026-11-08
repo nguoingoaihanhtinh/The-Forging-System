@@ -11,6 +11,8 @@ import '../../features/armory_admin/presentation/screens/admin_armory_tiers_scre
 import '../../features/class_admin/presentation/screens/class_detail_screen.dart';
 import '../../features/class_admin/presentation/screens/class_list_screen.dart';
 import '../../features/reception_memberships/presentation/screens/admin_renewal_requests_screen.dart';
+import '../../features/admin_challenges/presentation/admin_challenge_form_screen.dart';
+import '../../features/admin_challenges/presentation/admin_challenges_screen.dart';
 import '../../features/staff/presentation/screens/staff_directory_screen.dart';
 import '../route_paths.dart';
 import '../shell/shell_tab.dart';
@@ -51,12 +53,7 @@ List<RouteBase> adminRoutes() => <RouteBase>[
             label: 'Thử thách',
             icon: HvpIcons.flag,
             activeIcon: HvpIcons.flagFill,
-            builder: (_) => const ComingSoonPage(
-              title: 'Thử thách',
-              owner: 'feature: admin_challenges',
-              icon: HvpIcons.flag,
-              description: 'Challenge, đơn quà và kho quà.',
-            ),
+            builder: (_) => const AdminChallengesScreen(),
           ),
           ShellTab(
             path: AdminPaths.notifications,
@@ -110,5 +107,15 @@ List<RouteBase> adminRoutes() => <RouteBase>[
       GoRoute(
         path: AdminPaths.armoryRewardCreate,
         builder: (context, state) => const AdminArmoryRewardFormScreen(),
+      ),
+      GoRoute(
+        path: AdminPaths.challengeCreate,
+        builder: (context, state) => const AdminChallengeFormScreen(),
+      ),
+      GoRoute(
+        path: AdminPaths.challengeEditPattern,
+        builder: (context, state) => AdminChallengeFormScreen(
+          challengeId: state.pathParameters['challengeId'],
+        ),
       ),
     ];
