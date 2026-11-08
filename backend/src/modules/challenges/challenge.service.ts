@@ -5,6 +5,8 @@ import { env } from '../../config/env';
 import type { AuditService } from '../audit/audit.service';
 import type { PointsPort } from '../points/points.service';
 import type { SettingsService } from '../settings/settings.service';
+import type { NotifierPort } from '../notifications/notification.service';
+import { NotificationEvent } from '../notifications/notification.events';
 import type { AttendanceConfirmedEvent } from '../../shared/events';
 import type {
   ChallengeParticipationView,
@@ -39,6 +41,7 @@ export class ChallengeService {
     private readonly audit: AuditService,
     private readonly points?: PointsPort,
     private readonly settings?: SettingsService,
+    private readonly notifier?: NotifierPort,
   ) {}
 
   search(filter: ChallengeFilter, limit: number, offset: number) {
@@ -91,6 +94,14 @@ export class ChallengeService {
       entityId: challengeId,
       after: participation,
     });
+    await this.notifier?.notifyMember({
+      userId: memberId,
+      event: NotificationEvent.CHALLENGE_JOINED,
+      title: 'ĐÃ THAM GIA THỬ THÁCH',
+      body: `Bạn đã tham gia thử thách “${challenge.title}”. Hoàn thành ${challenge.target} lượt để nhận thưởng.`,
+      dedupeKey: `challenge:joined:${participation.id}`,
+      payload: { challengeId: challenge.id, participationId: participation.id },
+    });
     return participation;
   }
 
@@ -118,6 +129,17 @@ export class ChallengeService {
         entityId: participation.id,
         after: { ...participation, target, source: 'ATTENDANCE_CONFIRMED', attendanceId: event.attendanceId },
       });
+      if (participation.status === 'AWAITING_COACH' && this.notifier) {
+        const challenge = await this.repo.find(participation.challengeId);
+        await this.notifier.notifyMember({
+          userId: participation.memberId,
+          event: NotificationEvent.CHALLENGE_COMPLETED,
+          title: 'HOÀN THÀNH THỬ THÁCH',
+          body: `Bạn đã hoàn thành “${challenge?.title ?? 'thử thách'}”. Hãy nộp bằng chứng để Coach duyệt phần thưởng.`,
+          dedupeKey: `challenge:completed:${participation.id}`,
+          payload: { challengeId: participation.challengeId, participationId: participation.id },
+        });
+      }
     }
   }
 
@@ -187,6 +209,16 @@ export class ChallengeService {
       });
     }
     const after = await this.repo.approveParticipation(participation.id, actorId, now, isLimited);
+    await this.notifier?.notifyMember({
+      userId: participation.memberId,
+      event: NotificationEvent.CHALLENGE_REWARDED,
+      title: isLimited ? 'THỬ THÁCH ĐÃ ĐƯỢC DUYỆT' : 'PHẦN THƯỞNG THỬ THÁCH ĐÃ VỀ',
+      body: isLimited
+        ? `Coach đã duyệt “${challenge.title}”. Bạn đã đạt giới hạn phần thưởng Challenge trong tháng này.`
+        : `Coach đã duyệt “${challenge.title}”. Bạn nhận ${challenge.rewardDp} DP và ${challenge.rewardMarks} Marks.`,
+      dedupeKey: `challenge:rewarded:${participation.id}`,
+      payload: { challengeId: challenge.id, participationId: participation.id },
+    });
     await this.audit.record({
       actorId,
       action: isLimited ? 'CHALLENGE_APPROVED_LIMITED' : 'CHALLENGE_APPROVED',

@@ -153,7 +153,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   const staff = new StaffService(new StaffRepository(), audit, settings);
   const armory = new ArmoryService(new ArmoryRepository());
   const redemptions = new RedemptionService(new RedemptionRepository(), audit, points);
-  const challenges = new ChallengeService(new ChallengeRepository(), audit, points, settings);
+  const challenges = new ChallengeService(new ChallengeRepository(), audit, points, settings, notifications);
   eventBus.on<AttendanceConfirmedEvent>(DomainEvents.ATTENDANCE_CONFIRMED, async (event) => {
     await challenges.recordConfirmedAttendance(event);
   });
